@@ -1,0 +1,153 @@
+﻿{% extends "base.html" %}
+
+{% block title %}My Mini Projects — Python & Data Science Portfolio{% endblock %}
+{% block meta_desc %}A personal portfolio of Python, Data Science, Machine Learning, and Flask mini projects built to learn and experiment.{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ─────────────────────────────────────────────────────────────── -->
+<section class="hero" id="home">
+  <div class="hero-bg">
+    <div class="hero-grid"></div>
+    <div class="hero-glow"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <i class="fa-solid fa-circle-dot pulse"></i>
+      <span>Open to collaborations</span>
+    </div>
+    <h1 class="hero-title">My Mini Projects</h1>
+    <p class="hero-subtitle">Python &bull; Data Science &bull; Machine Learning &bull; Web Development</p>
+    <p class="hero-description">
+      Building small projects to learn, experiment, and solve real-world problems.
+    </p>
+    <div class="hero-actions">
+      <a href="#projects" class="btn btn-primary">
+        <i class="fa-solid fa-rocket"></i> Explore Projects
+      </a>
+      <a href="#about" class="btn btn-ghost">
+        <i class="fa-solid fa-user"></i> About
+      </a>
+    </div>
+    <!-- floating stats -->
+    <div class="hero-stats">
+      <div class="stat-pill"><span class="stat-num">{{ projects|length }}</span><span class="stat-label">Project{{ 's' if projects|length != 1 else '' }}</span></div>
+      <div class="stat-pill"><span class="stat-num">5+</span><span class="stat-label">Technologies</span></div>
+      <div class="stat-pill"><span class="stat-num">100%</span><span class="stat-label">Python</span></div>
+    </div>
+  </div>
+
+  <div class="hero-scroll-hint">
+    <span>Scroll to explore</span>
+    <i class="fa-solid fa-chevron-down bounce"></i>
+  </div>
+</section>
+
+
+<!-- ── Projects Grid ─────────────────────────────────────────────────────── -->
+<section class="projects-section" id="projects">
+  <div class="section-container">
+    <div class="section-header">
+      <span class="section-label">Portfolio</span>
+      <h2 class="section-title">Mini Projects</h2>
+      <p class="section-subtitle">
+        Each project explores a different domain — from time-series forecasting to machine learning.
+      </p>
+    </div>
+
+    <div class="projects-grid">
+      {% for project in projects %}
+      <article class="project-card {% if project.status == 'coming-soon' %}coming-soon{% endif %}"
+               id="card-{{ project.id }}"
+               data-category="{{ project.category }}">
+
+        <!-- card header -->
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="fa-solid fa-{{ project.icon }}"></i>
+          </div>
+          <div class="card-meta">
+            <span class="card-category">{{ project.category }}</span>
+            {% if project.status == 'coming-soon' %}
+            <span class="badge badge-soon">Coming Soon</span>
+            {% else %}
+            <span class="badge badge-done"><i class="fa-solid fa-circle-check"></i> Live</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- card body -->
+        <div class="card-body">
+          <h3 class="card-title">{{ project.title }}</h3>
+          <p class="card-desc">{{ project.description }}</p>
+        </div>
+
+        <!-- tech stack -->
+        <div class="card-techs">
+          {% for tech in project.technologies %}
+          <span class="tech-tag">{{ tech }}</span>
+          {% endfor %}
+        </div>
+
+        <!-- card footer -->
+        <div class="card-footer">
+          {% if project.status == 'complete' %}
+          <a href="{{ project.route }}" class="btn btn-card">
+            View Project <i class="fa-solid fa-arrow-right"></i>
+          </a>
+          {% else %}
+          <button class="btn btn-card disabled" disabled>
+            Coming Soon <i class="fa-solid fa-clock"></i>
+          </button>
+          {% endif %}
+        </div>
+
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+
+<!-- ── About Section ─────────────────────────────────────────────────────── -->
+<section class="about-section" id="about">
+  <div class="section-container">
+    <div class="about-grid">
+
+      <div class="about-text">
+        <span class="section-label">About</span>
+        <h2 class="section-title">Why Mini Projects?</h2>
+        <p>
+          This website is a living collection of mini projects built to demonstrate and deepen
+          practical skills in Python programming, data analysis, machine learning, and web development.
+        </p>
+        <p>
+          Each project is self-contained, well-documented, and comes with its own Jupyter Notebook
+          so you can follow the analysis step by step.
+        </p>
+        <p>
+          The goal is not perfection — it is progress. Every project here represents a real
+          learning experience.
+        </p>
+        <a href="#projects" class="btn btn-primary mt-1">View All Projects</a>
+      </div>
+
+      <div class="about-skills">
+        <h3 class="skills-title">Technologies &amp; Skills</h3>
+        <div class="skill-list">
+          <div class="skill-item"><i class="fa-brands fa-python"></i><span>Python 3</span></div>
+          <div class="skill-item"><i class="fa-solid fa-database"></i><span>Pandas &amp; NumPy</span></div>
+          <div class="skill-item"><i class="fa-solid fa-brain"></i><span>Scikit-learn</span></div>
+          <div class="skill-item"><i class="fa-solid fa-chart-line"></i><span>Time-Series Analysis</span></div>
+          <div class="skill-item"><i class="fa-solid fa-flask"></i><span>Flask</span></div>
+          <div class="skill-item"><i class="fa-solid fa-chart-bar"></i><span>Matplotlib &amp; Chart.js</span></div>
+          <div class="skill-item"><i class="fa-solid fa-book"></i><span>Jupyter Notebooks</span></div>
+          <div class="skill-item"><i class="fa-solid fa-server"></i><span>REST APIs</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{% endblock %}

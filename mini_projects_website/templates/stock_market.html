@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+
+{% block title %}Dow Jones Stock Market Analysis — Mini Projects{% endblock %}
+{% block meta_desc %}Live model metrics and predictions dashboard for Dow Jones time-series analysis using Python, Pandas, Statsmodels, Scikit-learn.{% endblock %}
+
+{% block extra_head %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Project Hero ─────────────────────────────────────────── -->
+<section class="project-hero">
+  <div class="project-hero-bg"></div>
+  <div class="section-container">
+    <a href="/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Projects</a>
+    <div class="project-hero-content">
+      <div class="project-icon-large"><i class="fa-solid fa-chart-line"></i></div>
+      <div>
+        <span class="section-label">Data Science / Time Series</span>
+        <h1 class="project-title">Dow Jones Stock Market Analysis</h1>
+        <p class="project-subtitle">Historical market analysis and time-series modelling — with live model metrics</p>
+        <div class="project-techs">
+          {% for tech in ["Python","Pandas","NumPy","Scikit-learn","Statsmodels","Matplotlib","Jupyter"] %}
+          <span class="tech-tag">{{ tech }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Summary Cards ─────────────────────────────────────────── -->
+<section class="summary-section">
+  <div class="section-container">
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-icon"><i class="fa-solid fa-database"></i></div>
+        <div class="summary-info">
+          <span class="summary-label">Observations</span>
+          <span class="summary-value">{{ summary.get('observations','—') }}</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon"><i class="fa-solid fa-calendar-plus"></i></div>
+        <div class="summary-info">
+          <span class="summary-label">Start Date</span>
+          <span class="summary-value">{{ summary.get('start_date','—') }}</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon"><i class="fa-solid fa-calendar-check"></i></div>
+        <div class="summary-info">
+          <span class="summary-label">End Date</span>
+          <span class="summary-value">{{ summary.get('end_date','—') }}</span>
+        </div>
+      </div>
+      <div class="summary-card accent-card">
+        <div class="summary-icon"><i class="fa-solid fa-dollar-sign"></i></div>
+        <div class="summary-info">
+          <span class="summary-label">Latest Close</span>
+          <span class="summary-value">{{ summary.get('latest_close','—') }}</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+        <div class="summary-info">
+          <span class="summary-label">Highest Close</span>
+          <span class="summary-value">{{ summary.get('highest_close','—') }}</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>
+        <div class="summary-info">
+          <span class="summary-label">Lowest Close</span>
+          <span class="summary-value">{{ summary.get('lowest_close','—') }}</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon"><i class="fa-solid fa-calculator"></i></div>
+        <div class="summary-info">
+          <span class="summary-label">Average Close</span>
+          <span class="summary-value">{{ summary.get('average_close','—') }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Close Price Chart ──────────────────────────────────────── -->
+<section class="chart-section" id="chart">
+  <div class="section-container">
+    <div class="section-header left-align">
+      <span class="section-label">Visualisation</span>
+      <h2 class="section-title">Dow Jones Close Price</h2>
+    </div>
+    <div class="chart-controls">
+      <label for="rangeSelect" class="control-label"><i class="fa-solid fa-sliders"></i> Observations:</label>
+      <select id="rangeSelect" class="control-select">
+        <option value="250">Last 250</option>
+        <option value="500">Last 500</option>
+        <option value="750">Last 750</option>
+        <option value="1500">Last 1 500</option>
+        <option value="5000">All (recent)</option>
+      </select>
+      <div class="chart-status" id="chartStatus"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading data...</div>
+    </div>
+    <div class="chart-wrapper"><canvas id="stockChart"></canvas></div>
+    <p class="chart-note"><i class="fa-solid fa-circle-info"></i> Data from <code>/api/stock-data</code> — hover for tooltips.</p>
+  </div>
+</section>
+
+<!-- ── LIVE MODEL METRICS DASHBOARD ─────────────────────────────── -->
+<section class="metrics-section" id="metrics">
+  <div class="section-container">
+    <div class="section-header left-align">
+      <span class="section-label">Live Results</span>
+      <h2 class="section-title">Model Metrics Dashboard</h2>
+      <p class="section-desc">
+        Models are computed live on the server using your <code>dow_jones.csv</code>.
+        Metrics update automatically when Flask starts.
+      </p>
+    </div>
+
+    <!-- Meta info bar -->
+    <div class="metrics-meta-bar" id="metaBar">
+      <i class="fa-solid fa-circle-notch fa-spin"></i> Computing models…
+    </div>
+
+    <!-- MAE score cards (injected by JS) -->
+    <div class="mae-cards" id="maeCards"></div>
+
+    <!-- Model comparison table (rows injected by JS) -->
+    <div class="table-wrapper" style="margin-top:2rem;">
+      <table class="model-table" id="modelTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Model</th>
+            <th>Description</th>
+            <th>MAE</th>
+            <th>RMSE</th>
+            <th>R² Score</th>
+            <th>Dir. Acc</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="modelTbody">
+          <tr><td colspan="8" class="loading-row"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading saved model metrics…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="model-note">
+      <i class="fa-solid fa-lightbulb"></i>
+      <div>
+        <strong>Understanding R² Score in Financial Time Series:</strong> Daily stock returns have high noise and low autocorrelation. R² scores near zero (or slightly negative on out-of-sample holdout) are completely expected in financial economics, where the Random Walk Hypothesis / Efficient Market Hypothesis indicates next-day price movements cannot be explained solely by variance in past prices.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PREDICTIONS CHART ─────────────────────────────────────────── -->
+<section class="predictions-section" id="predictions">
+  <div class="section-container">
+    <div class="section-header left-align">
+      <span class="section-label">Predictions Dashboard</span>
+      <h2 class="section-title">Actual vs Predicted — ld_Close</h2>
+      <p class="section-desc">
+        Shows the <strong>last CV fold</strong>: models trained on the first 80 % of
+        2 000 recent observations, predicting on the remaining 20 %.
+        Series plotted: <code>ld_Close</code> (first-differenced log Close price).
+      </p>
+    </div>
+
+    <!-- Model toggle buttons -->
+    <div class="pred-controls" id="predControls">
+      <span class="control-label"><i class="fa-solid fa-eye"></i> Show/hide series:</span>
+      <button class="toggle-btn active" data-series="actual"   style="--c:#f0f4ff">Actual</button>
+      <button class="toggle-btn active" data-series="lstm"     style="--c:#10b981">LSTM (Deep Learning)</button>
+      <button class="toggle-btn active" data-series="rnn"      style="--c:#06b6d4">Simple RNN</button>
+      <button class="toggle-btn active" data-series="rf"       style="--c:#3b82f6">Random Forest</button>
+      <button class="toggle-btn active" data-series="arma"     style="--c:#a78bfa">ARMA(2,7)</button>
+      <button class="toggle-btn"        data-series="baseline" style="--c:#f59e0b">Baseline</button>
+      <div class="chart-status" id="predStatus"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading predictions...</div>
+    </div>
+
+    <div class="chart-wrapper tall-chart"><canvas id="predChart"></canvas></div>
+
+    <div class="pred-footnote">
+      <i class="fa-solid fa-circle-info"></i>
+      <strong>Note:</strong> ld_Close values are <em>log-returns</em> (dimensionless, centred near 0).
+      Predictions are computed strictly using the <strong>saved model binaries (.joblib / .pkl / .keras)</strong> in <code>saved_models/</code>.
+    </div>
+  </div>
+</section>
+
+<!-- ── LIVE INFERENCE SIMULATOR (SAVED MODEL PREDICTION) ─────────── -->
+<section class="simulation-section" id="simulation">
+  <div class="section-container">
+    <div class="section-header left-align">
+      <span class="section-label">Real-Time ML & Deep Learning Inference</span>
+      <h2 class="section-title">Live Model Forecasting Simulator</h2>
+      <p class="section-desc">
+        Select a <strong>saved model binary from disk</strong> (including trained LSTM & RNN deep learning models) to generate real-time next-day predictions.
+      </p>
+    </div>
+
+    <div class="simulation-grid">
+      <!-- Controls card -->
+      <div class="sim-card sim-controls-card">
+        <h3 class="sim-card-title"><i class="fa-solid fa-robot"></i> Choose Saved Model & Inputs</h3>
+        
+        <div class="sim-form-group">
+          <label class="sim-label" for="simModelSelect">Saved Model Binary:</label>
+          <select id="simModelSelect" class="control-select sim-select">
+            <option value="bull_bear_regime" selected>🏆 Bull/Bear Trend Regime Classifier (93.4% Accuracy) — saved_models/regime_classifier.joblib</option>
+            <option value="volatility_regime">⚡ Volatility Regime Classifier (71.5% Accuracy) — saved_models/volatility_classifier.joblib</option>
+            <option value="lstm">LSTM Neural Network (60-Day Lookback) — saved_models/lstm_model.keras</option>
+            <option value="rnn">Simple RNN Neural Network (60-Day Lookback) — saved_models/simple_rnn_model.keras</option>
+            <option value="rf">Random Forest + Tech Features (100 Trees) — saved_models/random_forest_lag.joblib</option>
+            <option value="arma">ARMA(2,7) Time Series — saved_models/arma_model.pkl</option>
+            <option value="lr">Linear Regression + Tech Features — saved_models/linear_regression_lag.joblib</option>
+            <option value="baseline">Baseline Mean — saved_models/baseline_model.joblib</option>
+          </select>
+        </div>
+
+        <div class="sim-lags-grid">
+          <div class="lag-input-box">
+            <label>Lag 1 (Yesterday Return)</label>
+            <input type="number" step="0.0001" id="inputLag1" class="sim-input" placeholder="e.g. 0.0025">
+          </div>
+          <div class="lag-input-box">
+            <label>Lag 2 (t-2 Return)</label>
+            <input type="number" step="0.0001" id="inputLag2" class="sim-input" placeholder="e.g. -0.0012">
+          </div>
+          <div class="lag-input-box">
+            <label>Lag 3 (t-3 Return)</label>
+            <input type="number" step="0.0001" id="inputLag3" class="sim-input" placeholder="e.g. 0.0041">
+          </div>
+          <div class="lag-input-box">
+            <label>Lag 4 (t-4 Return)</label>
+            <input type="number" step="0.0001" id="inputLag4" class="sim-input" placeholder="e.g. -0.0008">
+          </div>
+          <div class="lag-input-box">
+            <label>Lag 5 (t-5 Return)</label>
+            <input type="number" step="0.0001" id="inputLag5" class="sim-input" placeholder="e.g. 0.0015">
+          </div>
+        </div>
+
+        <div class="sim-btn-row">
+          <button id="btnRunPrediction" class="btn btn-primary">
+            <i class="fa-solid fa-bolt"></i> Run Prediction with Saved Model
+          </button>
+          <button id="btnResetLags" class="btn btn-secondary">
+            <i class="fa-solid fa-rotate-left"></i> Use Latest Real Market Data
+          </button>
+        </div>
+      </div>
+
+      <!-- Inference Output card -->
+      <div class="sim-card sim-result-card" id="simResultBox">
+        <h3 class="sim-card-title"><i class="fa-solid fa-chart-pie"></i> Model Forecast Result</h3>
+        
+        <div class="sim-result-header">
+          <span class="sim-badge" id="simModelName">Random Forest (Saved Joblib)</span>
+          <span class="sim-disk-badge"><i class="fa-solid fa-floppy-disk"></i> Loaded from saved_models/</span>
+        </div>
+
+        <div class="sim-metric-main">
+          <div class="sim-target-price">
+            <span class="sim-price-label">Predicted Next Close</span>
+            <div class="sim-price-val" id="simPriceVal">$13,108.24</div>
+            <div class="sim-price-change" id="simPriceDelta">+$4.10 (+0.031%)</div>
+          </div>
+          <div class="sim-direction-badge" id="simDirectionBadge">
+            <i class="fa-solid fa-arrow-trend-up" id="simDirIcon"></i>
+            <span id="simDirText">BULLISH / UP</span>
+          </div>
+        </div>
+
+        <div class="sim-details-grid">
+          <div class="sim-detail-item">
+            <span class="sim-detail-label">Predicted Log-Return (ld_Close)</span>
+            <span class="sim-detail-value font-mono" id="simReturnVal">+0.000312</span>
+          </div>
+          <div class="sim-detail-item">
+            <span class="sim-detail-label">Baseline Prior Close</span>
+            <span class="sim-detail-value font-mono" id="simPriorClose">$13,104.14</span>
+          </div>
+          <div class="sim-detail-item">
+            <span class="sim-detail-label">Model R² Score</span>
+            <span class="sim-detail-value font-mono" id="simR2Score">-0.0115</span>
+          </div>
+          <div class="sim-detail-item">
+            <span class="sim-detail-label">Model Test MAE</span>
+            <span class="sim-detail-value font-mono" id="simTestMAE">0.008490</span>
+          </div>
+          <div class="sim-detail-item">
+            <span class="sim-detail-label">Binary Model File</span>
+            <span class="sim-detail-value font-mono" id="simBinaryFile">random_forest_lag.joblib</span>
+          </div>
+          <div class="sim-detail-item">
+            <span class="sim-detail-label">Inference Latency</span>
+            <span class="sim-detail-value font-mono text-success" id="simLatency">&lt; 3ms</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saved models storage table -->
+    <div class="saved-models-box" style="margin-top:2.5rem;">
+      <div class="saved-models-header">
+        <div>
+          <h3><i class="fa-solid fa-hard-drive"></i> Persistent Model Binaries on Disk</h3>
+          <p class="saved-desc">The trained estimators are saved in <code>saved_models/</code> and used for all forecasts.</p>
+        </div>
+        <button id="btnRetrain" class="btn btn-outline-sm">
+          <i class="fa-solid fa-arrows-rotate"></i> Retrain & Overwrite Binaries
+        </button>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="model-table status-table">
+          <thead>
+            <tr>
+              <th>File Name</th>
+              <th>Format</th>
+              <th>File Size</th>
+              <th>Last Saved Timestamp</th>
+              <th>Memory Status</th>
+            </tr>
+          </thead>
+          <tbody id="savedModelsTbody">
+            <tr><td colspan="5" class="loading-row"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking saved model files…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── Data Analysis ─────────────────────────────────────────────── -->
+<section class="analysis-section" id="analysis">
+  <div class="section-container">
+    <div class="section-header left-align">
+      <span class="section-label">Methodology</span>
+      <h2 class="section-title">Data Analysis</h2>
+    </div>
+
+    <div class="analysis-block">
+      <div class="analysis-icon"><i class="fa-solid fa-broom"></i></div>
+      <div class="analysis-content">
+        <h3>Data Preprocessing</h3>
+        <p>The raw <code>dow_jones.csv</code> covers <strong>1901 to 2012</strong>. Cleaning steps:</p>
+        <ul>
+          <li><code>DATE</code> parsed as datetime so Pandas can sort and index correctly.</li>
+          <li>Market columns converted to numeric — <code>na</code> strings become <code>NaN</code>.</li>
+          <li>Rows where <code>Close</code> is NaN dropped (non-trading days).</li>
+          <li>Analysis focuses on <strong>Close price</strong> as the primary target variable.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="analysis-block">
+      <div class="analysis-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+      <div class="analysis-content">
+        <h3>Exploratory Data Analysis</h3>
+        <div class="eda-grid">
+          <div class="eda-card"><span class="eda-label">Date Range</span><span class="eda-value">{{ summary.get('start_date','—') }} → {{ summary.get('end_date','—') }}</span></div>
+          <div class="eda-card"><span class="eda-label">Clean Observations</span><span class="eda-value">{{ summary.get('observations','—') }} trading days</span></div>
+          <div class="eda-card"><span class="eda-label">Duplicate Dates</span><span class="eda-value">0 — unique</span></div>
+          <div class="eda-card"><span class="eda-label">Missing Close</span><span class="eda-value">0 — removed</span></div>
+          <div class="eda-card"><span class="eda-label">Frequency</span><span class="eda-value">Daily (business days)</span></div>
+          <div class="eda-card"><span class="eda-label">Highest Close</span><span class="eda-value">{{ summary.get('highest_close','—') }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="analysis-block">
+      <div class="analysis-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+      <div class="analysis-content">
+        <h3>Transformation</h3>
+        <div class="code-block">
+          <div class="code-line"><span class="code-comment"># Log transformation — stabilises variance</span></div>
+          <div class="code-line"><span class="code-var">log_Close</span> = log(<span class="code-var">Close</span>)</div>
+          <div class="code-line">&nbsp;</div>
+          <div class="code-line"><span class="code-comment"># First difference — removes trend, aids stationarity</span></div>
+          <div class="code-line"><span class="code-var">ld_Close</span> = diff(<span class="code-var">log_Close</span>)</div>
+        </div>
+        <p>First-differencing removes the long-term upward trend, yielding log-returns that fluctuate near zero — a near-stationary series suitable for ARMA and regression models.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Stationarity ──────────────────────────────────────────────── -->
+<section class="stationarity-section" id="stationarity">
+  <div class="section-container">
+    <div class="section-header left-align">
+      <span class="section-label">Statistical Testing</span>
+      <h2 class="section-title">Stationarity Analysis</h2>
+    </div>
+    <div class="stationarity-grid">
+      <div class="test-card">
+        <div class="test-header"><i class="fa-solid fa-flask-vial"></i><h3>ADF Test</h3><span class="test-badge">Augmented Dickey-Fuller</span></div>
+        <p>Small p-value (&lt; 0.05) → reject unit-root H₀ → <strong>series is stationary</strong>.</p>
+        <div class="test-result"><span class="result-label">H₀</span><span class="result-val">Series has a unit root</span></div>
+        <div class="test-result"><span class="result-label">Applied to</span><span class="result-val"><code>ld_Close</code></span></div>
+        <div class="test-result note-result"><i class="fa-solid fa-terminal"></i> Run the notebook for live p-values.</div>
+      </div>
+      <div class="test-card">
+        <div class="test-header"><i class="fa-solid fa-flask-vial"></i><h3>KPSS Test</h3><span class="test-badge">Kwiatkowski–Phillips–Schmidt–Shin</span></div>
+        <p>Large p-value (&gt; 0.05) → fail to reject H₀ → <strong>series is stationary</strong>.</p>
+        <div class="test-result"><span class="result-label">H₀</span><span class="result-val">Series is stationary</span></div>
+        <div class="test-result"><span class="result-label">Applied to</span><span class="result-val"><code>ld_Close</code></span></div>
+        <div class="test-result note-result"><i class="fa-solid fa-terminal"></i> Run the notebook for live p-values.</div>
+      </div>
+    </div>
+    <div class="stationarity-note">
+      <i class="fa-solid fa-lightbulb"></i>
+      <p><strong>Why stationarity matters:</strong> ARMA and linear regression with lags assume constant mean, variance, and autocorrelation. Log-differencing transforms the Close price into log-returns — approximately stationary for equity indices.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Notebook ──────────────────────────────────────────────────── -->
+<section class="notebook-section" id="notebook">
+  <div class="section-container">
+    <div class="section-header left-align">
+      <span class="section-label">Reproducible Research</span>
+      <h2 class="section-title">Jupyter Notebook</h2>
+    </div>
+    <div class="notebook-card">
+      <div class="notebook-icon"><i class="fa-solid fa-book-open"></i></div>
+      <div class="notebook-info">
+        <h3>stock_market_analysis.ipynb</h3>
+        <p>A fully self-contained notebook reproducing the entire workflow — from data loading through EDA, stationarity tests, and model fitting.</p>
+        <div class="notebook-steps">
+          {% set steps = ["Project Introduction","Import Libraries","Load Dataset","Data Preprocessing","Dataset Overview","Exploratory Data Analysis","Date Analysis","Missing & Duplicate Values","Close Price Visualisation","Log Transformation","First Difference","Stationarity Tests","Time-Series Cross Validation","Baseline & Regression Models","Random Forest with Lag Features","Model Results & Comparison","Conclusion"] %}
+          {% for step in steps %}
+          <div class="nb-step"><span class="nb-num">{{ loop.index }}</span><span>{{ step }}</span></div>
+          {% endfor %}
+        </div>
+        <div class="notebook-run">
+          <p><strong>Run locally:</strong></p>
+          <div class="code-block small-code">
+            <div class="code-line">cd mini_projects_website</div>
+            <div class="code-line">jupyter notebook notebooks/stock_market_analysis.ipynb</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/stock_market.js') }}"></script>
+{% endblock %}
