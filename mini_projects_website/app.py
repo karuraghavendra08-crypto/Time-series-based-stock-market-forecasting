@@ -69,14 +69,14 @@ PROJECTS = [
         "title": "Dow Jones Stock Market Analysis",
         "category": "Data Science / Time Series",
         "description": (
-            "Exploratory and predictive analysis of historical Dow Jones "
-            "stock-market data using Python, Scikit-learn, and Statsmodels with saved models."
+            "Exploratory and predictive analysis of Dow Jones "
+            "stock-market data (2015–2025) using Python, Scikit-learn, and Statsmodels with saved models."
         ),
         "technologies": ["Python", "Pandas", "Scikit-learn", "Statsmodels", "Joblib", "Chart.js"],
         "route": "/project/stock-market",
         "icon": "chart-line",
         "status": "complete",
-        "year": "2024",
+        "year": "2025",
     },
 ]
 
