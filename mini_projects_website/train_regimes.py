@@ -137,3 +137,70 @@ with open(metrics_path, "w", encoding="utf-8") as f:
     json.dump(data, f, indent=2)
 
 print("[OK] Updated model_metrics.json with High-Accuracy Regime Classifiers (71% - 94%)!")
+
+# ── Generate GitHub Actions CI/CD Pipeline ─────────────────────────────────────
+root_dir = os.path.dirname(BASE_DIR)
+wf_dir = os.path.join(root_dir, ".github", "workflows")
+os.makedirs(wf_dir, exist_ok=True)
+ci_path = os.path.join(wf_dir, "ci.yml")
+
+ci_yaml = """name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Automated Testing & Linting
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest pytest-cov
+          pip install -r requirements.txt
+
+      - name: Lint with Flake8
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=.git,__pycache__,saved_models,data
+          flake8 . --count --exit-zero --max-complexity=15 --max-line-length=127 --statistics --exclude=.git,__pycache__,saved_models,data
+
+      - name: Run Pytest Test Suite
+        run: |
+          pytest tests/ -v --tb=short
+
+  deploy:
+    name: Continuous Deployment
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deployment Notification
+        run: |
+          echo "CI/CD Pipeline passed all checks successfully for main branch!"
+"""
+
+with open(ci_path, "w", encoding="utf-8") as f:
+    f.write(ci_yaml)
+
+print(f"[OK] Generated {ci_path} successfully!")
