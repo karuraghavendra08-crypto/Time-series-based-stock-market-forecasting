@@ -26,12 +26,16 @@ import pandas as pd
 from datetime import datetime
 from flask import Flask, render_template, jsonify, request
 
-app = Flask(__name__)
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 MODELS_DIR = os.path.join(BASE_DIR, "saved_models")
 DOW_JONES_CSV = os.path.join(DATA_DIR, "dow_jones.csv")
+
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "templates"),
+    static_folder=os.path.join(BASE_DIR, "static"),
+)
 
 # Ensure models directory exists
 os.makedirs(MODELS_DIR, exist_ok=True)
