@@ -144,7 +144,9 @@ wf_dir = os.path.join(root_dir, ".github", "workflows")
 os.makedirs(wf_dir, exist_ok=True)
 ci_path = os.path.join(wf_dir, "ci.yml")
 
-ci_yaml = """name: CI/CD Pipeline
+matrix_var = "${{ matrix.python-version }}"
+
+ci_yaml = f"""name: CI/CD Pipeline
 
 on:
   push:
@@ -165,10 +167,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python {matrix_var}
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: {matrix_var}
           cache: "pip"
 
       - name: Install Dependencies
