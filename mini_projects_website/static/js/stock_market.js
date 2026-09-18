@@ -385,13 +385,15 @@ async function populateInitialSimulatorData() {
     const data = await res.json();
     if (data.success && data.input_features) {
       latestMarketFeatures = data.input_features;
-      document.getElementById("inputLag1").value = data.input_features.lag_1.toFixed(5);
-      document.getElementById("inputLag2").value = data.input_features.lag_2.toFixed(5);
-      document.getElementById("inputLag3").value = data.input_features.lag_3.toFixed(5);
-      document.getElementById("inputLag4").value = data.input_features.lag_4.toFixed(5);
-      document.getElementById("inputLag5").value = data.input_features.lag_5.toFixed(5);
-      
-      // Run once on load to show actual computed result
+      // API returns return_lag_1 … return_lag_5 (not lag_1 … lag_5)
+      const f = data.input_features;
+      document.getElementById("inputLag1").value = ((f.return_lag_1)  ?? 0).toFixed(6);
+      document.getElementById("inputLag2").value = ((f.return_lag_2)  ?? 0).toFixed(6);
+      document.getElementById("inputLag3").value = ((f.return_lag_3)  ?? 0).toFixed(6);
+      document.getElementById("inputLag4").value = ((f.return_lag_5)  ?? 0).toFixed(6);
+      document.getElementById("inputLag5").value = ((f.return_lag_10) ?? 0).toFixed(6);
+
+      // Auto-run the selected model once data is ready
       runLivePrediction();
     }
   } catch(e) {
@@ -484,6 +486,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnRun = document.getElementById("btnRunPrediction");
   if (btnRun) btnRun.addEventListener("click", runLivePrediction);
   
+  // Wire model-select AFTER populateInitialSimulatorData so it doesn't fire too early
   const simSel = document.getElementById("simModelSelect");
   if (simSel) simSel.addEventListener("change", runLivePrediction);
 
@@ -491,11 +494,13 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnReset) {
     btnReset.addEventListener("click", () => {
       if (latestMarketFeatures) {
-        document.getElementById("inputLag1").value = latestMarketFeatures.lag_1.toFixed(5);
-        document.getElementById("inputLag2").value = latestMarketFeatures.lag_2.toFixed(5);
-        document.getElementById("inputLag3").value = latestMarketFeatures.lag_3.toFixed(5);
-        document.getElementById("inputLag4").value = latestMarketFeatures.lag_4.toFixed(5);
-        document.getElementById("inputLag5").value = latestMarketFeatures.lag_5.toFixed(5);
+        const f = latestMarketFeatures;
+        // Use the correct API key names (return_lag_1 … return_lag_10)
+        document.getElementById("inputLag1").value = ((f.return_lag_1)  ?? 0).toFixed(6);
+        document.getElementById("inputLag2").value = ((f.return_lag_2)  ?? 0).toFixed(6);
+        document.getElementById("inputLag3").value = ((f.return_lag_3)  ?? 0).toFixed(6);
+        document.getElementById("inputLag4").value = ((f.return_lag_5)  ?? 0).toFixed(6);
+        document.getElementById("inputLag5").value = ((f.return_lag_10) ?? 0).toFixed(6);
         runLivePrediction();
       }
     });
