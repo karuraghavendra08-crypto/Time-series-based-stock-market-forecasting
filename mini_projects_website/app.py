@@ -27,15 +27,24 @@ import pandas as pd
 from datetime import datetime
 from flask import Flask, render_template, jsonify, request
 
-# ── NumPy BitGenerator Unpickling Compatibility Shim ──────────────────────────
+# ── Comprehensive NumPy BitGenerator Unpickling Compatibility Patch ───────────
+try:
+    import numpy.random._pickle as _npr_pickle
+    if hasattr(_npr_pickle, "BitGenerators") and isinstance(_npr_pickle.BitGenerators, dict):
+        for k, v in list(_npr_pickle.BitGenerators.items()):
+            _npr_pickle.BitGenerators[v] = v
+            _npr_pickle.BitGenerators[str(v)] = v
+            if hasattr(v, "__name__"):
+                _npr_pickle.BitGenerators[v.__name__] = v
+            if hasattr(v, "__module__") and hasattr(v, "__name__"):
+                _npr_pickle.BitGenerators[f"{v.__module__}.{v.__name__}"] = v
+except Exception:
+    pass
+
 try:
     import numpy.random._mt19937 as _mt
     if not hasattr(np.random, "MT19937"):
         np.random.MT19937 = _mt.MT19937
-    if hasattr(_mt, "MT19937"):
-        import numpy.random.bit_generator as _bg
-        if not hasattr(_bg, "MT19937"):
-            _bg.MT19937 = _mt.MT19937
 except Exception:
     pass
 
