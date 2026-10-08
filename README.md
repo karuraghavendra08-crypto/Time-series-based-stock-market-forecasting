@@ -96,7 +96,7 @@ Yes — and this project proves it. It applies multiple machine learning and dee
 ## 🌐 Live Links
 
 - **🚀 Live Website**: [https://stock-market-forecasting-6cw5.onrender.com/project/stock-market](https://stock-market-forecasting-6cw5.onrender.com/project/stock-market)
-- **💻 GitHub**: [https://github.com/karuraghavendra08-crypto/Time-series-based-stock-market-forecasting](https://github.com/karuraghavendra08-crypto/Time-series-based-stock-market-forecasting)
+- **💻 GitHub (View Only)**: [https://github.com/karuraghavendra08-crypto/Time-series-based-stock-market-forecasting/blob/main/README.md](https://github.com/karuraghavendra08-crypto/Time-series-based-stock-market-forecasting/blob/main/README.md)
 
 ---
 
@@ -194,7 +194,7 @@ As part of my journey in Data Science and Machine Learning, I built an end-to-en
 ✅ Interactive frontend charts built with Chart.js
 
 🔗 Live Demo: https://stock-market-forecasting-6cw5.onrender.com/project/stock-market
-💻 GitHub: https://github.com/karuraghavendra08-crypto/Time-series-based-stock-market-forecasting
+💻 GitHub: https://github.com/karuraghavendra08-crypto/Time-series-based-stock-market-forecasting/blob/main/README.md
 
 This project taught me how to handle real-world financial data, prevent data leakage in time-series models, and build production-ready ML web applications from scratch.
 

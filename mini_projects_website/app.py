@@ -509,6 +509,7 @@ def model_status():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api/predict", methods=["GET", "POST"])
+# NOTE: GET requests return a lightweight status ping — full inference requires POST or GET with params.
 def live_predict():
     """
     Live 5-Day Forward Direction Prediction using saved classifier binaries.
@@ -518,6 +519,9 @@ def live_predict():
     3. Custom user lag overrides
     """
     sys.setrecursionlimit(10000)
+    # Lightweight GET health-check — avoids Render cold-start timeout on bare GET
+    if request.method == "GET" and not request.args:
+        return jsonify({"success": True, "status": "ready", "message": "Predict API ready. Send POST or GET with model/ticker params."})
     try:
         load_saved_models()
         
@@ -842,6 +846,27 @@ def retrain_models():
 @app.route("/api/projects")
 def api_projects():
     return jsonify(PROJECTS)
+
+@app.route("/api/status")
+def api_status():
+    """Alias health-check endpoint — returns server and model load status."""
+    return jsonify({
+        "status": "ok",
+        "models_loaded": len(_LOADED_MODELS),
+        "model_keys": list(_LOADED_MODELS.keys()),
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+
+@app.route("/api/notebook")
+def api_notebook():
+    """Returns notebook metadata — the .ipynb is run locally, not served live."""
+    nb_path = os.path.join(BASE_DIR, "notebooks", "stock_market_analysis.ipynb")
+    return jsonify({
+        "available": os.path.exists(nb_path),
+        "name": "stock_market_analysis.ipynb",
+        "message": "Run the notebook locally with: jupyter notebook notebooks/stock_market_analysis.ipynb",
+        "github_url": "https://github.com/karuraghavendra08-crypto/Time-series-based-stock-market-forecasting/blob/main/notebooks/stock_market_analysis.ipynb"
+    })
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  ENTRY POINT

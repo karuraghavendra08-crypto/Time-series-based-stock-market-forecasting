@@ -707,12 +707,12 @@ document.addEventListener("DOMContentLoaded", () => {
     btnReset.addEventListener("click", () => {
       if (latestMarketFeatures) {
         const f = latestMarketFeatures;
-        // Use the correct API key names (return_lag_1 … return_lag_10)
-        document.getElementById("inputLag1").value = ((f.return_lag_1)  ?? 0).toFixed(6);
-        document.getElementById("inputLag2").value = ((f.return_lag_2)  ?? 0).toFixed(6);
-        document.getElementById("inputLag3").value = ((f.return_lag_3)  ?? 0).toFixed(6);
-        document.getElementById("inputLag4").value = ((f.return_lag_5)  ?? 0).toFixed(6);
-        document.getElementById("inputLag5").value = ((f.return_lag_10) ?? 0).toFixed(6);
+        // Correct field names from /api/live-market-data response
+        document.getElementById("inputLag1").value = ((f.return_1)      ?? 0).toFixed(6);
+        document.getElementById("inputLag2").value = ((f.return_lag_1)  ?? 0).toFixed(6);
+        document.getElementById("inputLag3").value = ((f.return_lag_2)  ?? 0).toFixed(6);
+        document.getElementById("inputLag4").value = ((f.return_5)      ?? 0).toFixed(6);
+        document.getElementById("inputLag5").value = ((f.return_10)     ?? 0).toFixed(6);
         runLivePrediction();
       }
     });
