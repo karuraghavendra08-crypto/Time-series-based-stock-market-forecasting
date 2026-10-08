@@ -20,8 +20,12 @@ def test_regime_classifier_loads_and_predicts():
     assert os.path.exists(regime_path), 'regime_classifier.joblib must exist'
     
     model = joblib.load(regime_path)
-    n_feats = getattr(model, 'n_features_in_', 8)
-    dummy_input = [[0.0] * n_feats]
+    if hasattr(model, 'feature_names_in_'):
+        import pandas as pd
+        dummy_input = pd.DataFrame([[0.0] * len(model.feature_names_in_)], columns=model.feature_names_in_)
+    else:
+        n_feats = getattr(model, 'n_features_in_', 8)
+        dummy_input = [[0.0] * n_feats]
     pred = model.predict(dummy_input)
     assert pred[0] in [0, 1], 'Regime classifier output should be binary (0 or 1)'
 
