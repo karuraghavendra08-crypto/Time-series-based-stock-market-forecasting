@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: stock-market-forecasting
+    name: time-series-stock-forecasting
     env: python
     region: oregon
     plan: free

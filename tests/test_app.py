@@ -21,12 +21,12 @@ def client():
 def test_home_page(client):
     res = client.get('/')
     assert res.status_code == 200
-    assert b'Portfolio' in res.data or b'Dow Jones' in res.data
+    assert b'Stock Market Forecasting' in res.data or b'Time Series' in res.data or b'Portfolio' in res.data
 
 def test_stock_market_page(client):
     res = client.get('/project/stock-market')
     assert res.status_code == 200
-    assert b'Dow Jones' in res.data
+    assert b'Stock Market Forecasting' in res.data or b'Time Series' in res.data or b'Dow Jones' in res.data
 
 def test_api_stock_data(client):
     res = client.get('/api/stock-data?n=100')

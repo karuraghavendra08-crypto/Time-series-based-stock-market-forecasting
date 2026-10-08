@@ -1,119 +1,72 @@
-﻿# Time Series Based Stock Market Forecasting
+# TIME SERIES BASED STOCK MARKET FORECASTING USING PYTHON
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Flask](https://img.shields.io/badge/framework-Flask-lightgrey.svg)](https://flask.palletsprojects.com/)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange.svg)](https://www.tensorflow.org/)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15+-orange.svg)](https://www.tensorflow.org/)
 [![Scikit-Learn](https://img.shields.io/badge/scikit--learn-latest-green.svg)](https://scikit-learn.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Yahoo Finance](https://img.shields.io/badge/Live_Data-yfinance-purple.svg)](https://pypi.org/project/yfinance/)
+[![Deployment](https://img.shields.io/badge/Render-Live-brightgreen.svg)](https://stock-market-forecasting-6cw5.onrender.com/project/stock-market)
 
-An end-to-end quantitative financial engineering, time-series forecasting, and machine learning web platform built with **Python, Flask, TensorFlow/Keras, Scikit-Learn, Statsmodels, and Chart.js**.
+An end-to-end quantitative financial engineering, time-series forecasting, and machine learning web platform built with **Python 3.11, Flask, TensorFlow/Keras, Scikit-Learn, Statsmodels, Yahoo Finance, and Chart.js**.
 
 ---
 
-## 📈 Overview & Key Features
+## 📈 Key Features & Model Highlights
 
-* **Historical Dow Jones Dataset (1901 – 2012)**: Over 20,000+ daily trading observations cleaned and analyzed.
-* **Deep Learning Sequence Models**:
-  * **Stacked LSTM Neural Network** (60-day sequence lookback, 24 technical indicators, 0.2 dropout, early stopping).
-  * **Simple RNN Neural Network** (60-day sequence lookback, 24 technical indicators).
+* **Real-Time Live Market Streaming**: Instant live quotes and real-time 32-feature technical indicator extraction via Yahoo Finance for `^DJI`, `AAPL`, `NVDA`, `MSFT`, `SPY`, and custom user tickers.
 * **High-Accuracy Market Regime Classifiers**:
-  * **93.42% Accuracy (0.9832 ROC-AUC)**: 5-Day Forward Bull/Bear Macro Trend Regime Classifier.
-  * **71.48% Accuracy (0.8033 ROC-AUC)**: Forward Market Volatility Regime Classifier.
-* **Classical Time Series & Machine Learning Benchmarks**:
-  * **ARMA(2, 7)** (AutoRegressive Moving Average on stationary log-returns).
-  * **Random Forest Regressor** (100 trees with 24 engineered technical lag features).
-  * **Linear Regression (OLS)** & Constant Baseline.
-* **Interactive Web Portfolio Dashboard**:
-  * Real-time model inference simulator powered directly by saved disk binaries (.keras, .joblib, .pkl).
-  * Interactive Multi-Series Chart.js visualizer with individual model toggling.
-  * Model metric scorecards (MAE, RMSE, ^2$ Score, Directional Accuracy, ROC-AUC).
-  * Model binary storage registry and one-click retraining.
-* **Reproducible Jupyter Notebook**:
-  * 20-step quantitative workflow (
-otebooks/stock_market_analysis.ipynb) covering data cleaning, EDA, ADF/KPSS stationarity testing, feature engineering, and model validation.
-
----
-
-## 🏗 Project Architecture
-
-`
-├── data/
-│   └── dow_jones.csv                # Historical Dow Jones index OHLCV dataset
-└── mini_projects_website/
-    ├── app.py                       # Flask server and REST APIs (/api/predict, /api/model-metrics)
-    ├── train_regimes.py             # Regime classifier training pipeline
-    ├── requirements.txt             # Project dependencies
-    ├── notebooks/
-    │   └── stock_market_analysis.ipynb  # End-to-end 20-step research notebook
-    ├── saved_models/                # Persisted model binaries & scalers
-    │   ├── regime_classifier.joblib # 93.4% Bull/Bear Trend Model
-    │   ├── volatility_classifier.joblib # 71.5% Volatility Model
-    │   ├── lstm_model.keras         # 60-Day Lookback Stacked LSTM
-    │   ├── simple_rnn_model.keras   # 60-Day Lookback Simple RNN
-    │   ├── arma_model.pkl           # Statsmodels ARMA(2,7)
-    │   ├── random_forest_lag.joblib # Random Forest + 24 features
-    │   ├── linear_regression_lag.joblib
-    │   ├── baseline_model.joblib
-    │   ├── dl_scaler.joblib         # Training-only fitted standard scaler
-    │   └── model_metrics.json       # Live metrics cache
-    ├── static/
-    │   ├── css/style.css            # Dark-mode theme UI styling
-    │   └── js/stock_market.js       # Chart.js visualizer & live simulator logic
-    └── templates/
-        ├── base.html                # Base layout template
-        ├── index.html               # Portfolio homepage
-        └── stock_market.html        # Stock forecasting dashboard
-`
+  * **93.42% Accuracy (0.9832 ROC-AUC)**: 5-Day Forward Bull/Bear Macro Trend Regime Classifier (`saved_models/regime_classifier.joblib`).
+  * **71.48% Accuracy (0.8033 ROC-AUC)**: Market Volatility Regime Classifier (`saved_models/volatility_classifier.joblib`).
+* **Deep Learning Sequence Models**:
+  * **Stacked LSTM Neural Network** (60-day sequence lookback, 32 technical indicators, batch norm, dropout).
+  * **Stacked Simple RNN Neural Network** (60-day sequence lookback, 32 technical indicators).
+* **Ensemble ML & Statistical Models**:
+  * **Random Forest Classifier (300 Trees)**: 80.38% Directional Accuracy (0.8840 ROC-AUC).
+  * **Gradient Boosting Classifier (300 Trees)**: 79.84% Directional Accuracy (0.8757 ROC-AUC).
+  * **Logistic Regression Classifier**: 79.03% Directional Accuracy (0.8576 ROC-AUC).
+  * **ARMA(2,7) Time Series**: Statistical benchmark on stationary log-returns.
+* **Interactive Web Platform**:
+  * Real-Time Inference Simulator with Live Market Data toggle and custom lag parameters.
+  * Multi-Series Chart.js Visualizer with individual model toggling.
+  * Live Model Metrics scorecard and disk binary storage inspector.
 
 ---
 
 ## 📊 Model Evaluation Summary
 
-| Model | Architecture / Type | MAE | RMSE | ^2$ Score | Directional / Class Accuracy | Persisted Binary |
-| :--- | :--- | :---: | :---: | :---: | :---: | :--- |
-| **Bull/Bear Regime Classifier** | Gradient Boosting | **0.0587** | **0.2423** | **+0.4342** | **93.42%** (0.9832 ROC-AUC) | egime_classifier.joblib |
-| **Market Volatility Classifier** | Random Forest | **0.2852** | **0.5340** | **+0.2148** | **71.48%** (0.8033 ROC-AUC) | olatility_classifier.joblib |
-| **Stacked LSTM Neural Network** | Deep Learning (Keras) | **0.008748** | **0.012908** | -0.0030 | 52.42% | lstm_model.keras |
-| **Simple RNN Neural Network** | Deep Learning (Keras) | **0.008759** | **0.012923** | -0.0053 | 52.42% | simple_rnn_model.keras |
-| **ARMA(2,7) Time Series** | Statsmodels | 0.008774 | 0.012944 | -0.0086 | 49.85% | rma_model.pkl |
-| **Random Forest + Features** | Ensemble ML | 0.008806 | 0.012904 | -0.0023 | 49.04% | andom_forest_lag.joblib |
-| **Linear Regression** | Supervised ML | 0.008902 | 0.013020 | -0.0205 | 48.82% | linear_regression_lag.joblib |
-| **Baseline Mean** | Benchmark | 0.008747 | 0.012889 | 0.0000 | 50.00% | aseline_model.joblib |
+| Model | Architecture / Type | Directional / Class Accuracy | ROC-AUC | F1-Score | Persisted Binary |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| **Bull/Bear Regime Classifier** | Gradient Boosting (8 Features) | **93.42%** | **0.9832** | **0.9421** | `regime_classifier.joblib` |
+| **Random Forest Classifier** | Ensemble ML (300 Trees) | **80.38%** | **0.8840** | **0.8450** | `random_forest_lag.joblib` |
+| **Gradient Boosting Classifier** | Boosting ML (300 Trees) | **79.84%** | **0.8757** | **0.8460** | `gradient_boosting_clf.joblib` |
+| **Logistic Regression** | Supervised ML + L2 Reg | **79.03%** | **0.8576** | **0.8382** | `linear_regression_lag.joblib` |
+| **Stacked Simple RNN** | Deep Learning (60-day sequence) | **73.39%** | **0.7426** | **0.7843** | `simple_rnn_model.keras` |
+| **Market Volatility Classifier** | Random Forest (8 Features) | **71.48%** | **0.8033** | **0.7512** | `volatility_classifier.joblib` |
+| **ARMA(2,7) Time Series** | Statsmodels | **68.55%** | — | — | `arma_model.pkl` |
+| **Stacked LSTM Neural Net** | Deep Learning (60-day sequence) | **63.44%** | **0.6255** | **0.7405** | `lstm_model.keras` |
+| **Most-Frequent Baseline** | Naive Benchmark | 60.75% | 0.5000 | — | `baseline_model.joblib` |
 
 ---
 
-## 🚀 Quick Start & Installation
+## 🚀 Live Demo & Deployment
 
-### 1. Clone the Repository
-`ash
+* **Live Web App**: [https://stock-market-forecasting-6cw5.onrender.com/project/stock-market](https://stock-market-forecasting-6cw5.onrender.com/project/stock-market)
+* **GitHub Repository**: [https://github.com/karuraghavendra08-crypto/Time-series-based-stock-market-forecasting](https://github.com/karuraghavendra08-crypto/Time-series-based-stock-market-forecasting)
+
+---
+
+## 💻 Running Locally
+
+```bash
+# 1. Clone repository
 git clone https://github.com/karuraghavendra08-crypto/Time-series-based-stock-market-forecasting.git
 cd Time-series-based-stock-market-forecasting
-`
 
-### 2. Set Up Virtual Environment & Dependencies
-`ash
-python -m venv venv
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
+# 2. Install dependencies
+pip install -r requirements.txt
 
-pip install -r mini_projects_website/requirements.txt
-`
-
-### 3. Launch the Web Application
-`ash
-cd mini_projects_website
+# 3. Start local server
 python app.py
-`
-Open your browser and navigate to: **http://127.0.0.1:5000**
+```
 
-### 4. Run the Jupyter Notebook
-`ash
-jupyter notebook notebooks/stock_market_analysis.ipynb
-`
-
----
-
-## 📜 License
-This project is licensed under the MIT License.
+Access the dashboard at **http://127.0.0.1:5000**.

@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="{% block meta_desc %}Personal Data Science and Python mini-projects portfolio.{% endblock %}" />
-  <title>{% block title %}My Mini Projects{% endblock %}</title>
+  <meta name="description" content="{% block meta_desc %}Time Series Based Stock Market Forecasting Using Python — Quantitative AI, Deep Learning, and Machine Learning Platform.{% endblock %}" />
+  <title>{% block title %}Time Series Based Stock Market Forecasting Using Python{% endblock %}</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -25,9 +25,9 @@
   <nav class="navbar" id="navbar">
     <div class="nav-container">
 
-      <a href="/" class="nav-brand">
-        <span class="brand-icon"><i class="fa-solid fa-code"></i></span>
-        <span class="brand-text">Mini<span class="accent">Projects</span></span>
+      <a href="/project/stock-market" class="nav-brand">
+        <span class="brand-icon"><i class="fa-solid fa-chart-line"></i></span>
+        <span class="brand-text">Stock<span class="accent">Forecast AI</span></span>
       </a>
 
       <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
@@ -35,9 +35,11 @@
       </button>
 
       <ul class="nav-links" id="navLinks">
-        <li><a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">Home</a></li>
-        <li><a href="/#projects" class="nav-link">Projects</a></li>
-        <li><a href="/#about" class="nav-link">About</a></li>
+        <li><a href="/project/stock-market" class="nav-link {% if request.path == '/project/stock-market' %}active{% endif %}">Forecast Dashboard</a></li>
+        <li><a href="/project/stock-market#simulation" class="nav-link">Live Inference</a></li>
+        <li><a href="/project/stock-market#metrics" class="nav-link">Model Metrics</a></li>
+        <li><a href="/project/stock-market#chart" class="nav-link">Visualisation</a></li>
+        <li><a href="/#about" class="nav-link">About Project</a></li>
       </ul>
 
     </div>
@@ -52,18 +54,20 @@
   <footer class="footer">
     <div class="footer-container">
       <div class="footer-brand">
-        <span class="brand-icon"><i class="fa-solid fa-code"></i></span>
-        <span>MiniProjects</span>
+        <span class="brand-icon"><i class="fa-solid fa-chart-line"></i></span>
+        <span>Time Series Based Stock Market Forecasting Using Python</span>
       </div>
-      <p class="footer-tagline">Building to learn. Learning to build.</p>
+      <p class="footer-tagline">Real-Time Market Streaming &bull; Deep Learning &bull; Machine Learning &bull; Quantitative Analytics</p>
       <div class="footer-stack">
-        <span class="tech-pill">Python</span>
+        <span class="tech-pill">Python 3.11</span>
         <span class="tech-pill">Flask</span>
-        <span class="tech-pill">Pandas</span>
+        <span class="tech-pill">TensorFlow / Keras</span>
         <span class="tech-pill">Scikit-learn</span>
-        <span class="tech-pill">Jupyter</span>
+        <span class="tech-pill">Statsmodels</span>
+        <span class="tech-pill">Yahoo Finance</span>
+        <span class="tech-pill">Chart.js</span>
       </div>
-      <p class="footer-copy">&copy; 2024 Mini Projects Portfolio</p>
+      <p class="footer-copy">&copy; 2026 Time Series Based Stock Market Forecasting Using Python</p>
     </div>
   </footer>
 

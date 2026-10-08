@@ -1,7 +1,7 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
-{% block title %}My Mini Projects — Python & Data Science Portfolio{% endblock %}
-{% block meta_desc %}A personal portfolio of Python, Data Science, Machine Learning, and Flask mini projects built to learn and experiment.{% endblock %}
+{% block title %}Time Series Based Stock Market Forecasting Using Python{% endblock %}
+{% block meta_desc %}Time Series Based Stock Market Forecasting Using Python — Quantitative AI, Deep Learning (LSTM, RNN), Machine Learning Regime Classifiers, and Real-Time Market Streaming.{% endblock %}
 
 {% block content %}
 
@@ -14,31 +14,32 @@
   <div class="hero-content">
     <div class="hero-badge">
       <i class="fa-solid fa-circle-dot pulse"></i>
-      <span>Open to collaborations</span>
+      <span>Production Machine Learning & Deep Learning</span>
     </div>
-    <h1 class="hero-title">My Mini Projects</h1>
-    <p class="hero-subtitle">Python &bull; Data Science &bull; Machine Learning &bull; Web Development</p>
+    <h1 class="hero-title">Time Series Based Stock Market Forecasting Using Python</h1>
+    <p class="hero-subtitle">Deep Learning &bull; Machine Learning &bull; Trend Regime Classification &bull; Live Market Streaming</p>
     <p class="hero-description">
-      Building small projects to learn, experiment, and solve real-world problems.
+      An end-to-end quantitative financial engineering and time-series forecasting web platform powered by <strong>Stacked LSTM, Simple RNN, Random Forest, Gradient Boosting (93.4% Accuracy)</strong>, and real-time Yahoo Finance market streaming.
     </p>
     <div class="hero-actions">
-      <a href="#projects" class="btn btn-primary">
-        <i class="fa-solid fa-rocket"></i> Explore Projects
+      <a href="/project/stock-market" class="btn btn-primary">
+        <i class="fa-solid fa-chart-line"></i> Launch Forecasting Dashboard
       </a>
-      <a href="#about" class="btn btn-ghost">
-        <i class="fa-solid fa-user"></i> About
+      <a href="/project/stock-market#simulation" class="btn btn-ghost">
+        <i class="fa-solid fa-bolt"></i> Live Real-Time Simulator
       </a>
     </div>
     <!-- floating stats -->
     <div class="hero-stats">
-      <div class="stat-pill"><span class="stat-num">{{ projects|length }}</span><span class="stat-label">Project{{ 's' if projects|length != 1 else '' }}</span></div>
-      <div class="stat-pill"><span class="stat-num">5+</span><span class="stat-label">Technologies</span></div>
-      <div class="stat-pill"><span class="stat-num">100%</span><span class="stat-label">Python</span></div>
+      <div class="stat-pill"><span class="stat-num">93.4%</span><span class="stat-label">Regime Accuracy</span></div>
+      <div class="stat-pill"><span class="stat-num">8</span><span class="stat-label">Trained ML/DL Models</span></div>
+      <div class="stat-pill"><span class="stat-num">32</span><span class="stat-label">Technical Features</span></div>
+      <div class="stat-pill"><span class="stat-num">Live</span><span class="stat-label">Yahoo Finance Feed</span></div>
     </div>
   </div>
 
   <div class="hero-scroll-hint">
-    <span>Scroll to explore</span>
+    <span>Scroll to explore architecture</span>
     <i class="fa-solid fa-chevron-down bounce"></i>
   </div>
 </section>
@@ -48,18 +49,16 @@
 <section class="projects-section" id="projects">
   <div class="section-container">
     <div class="section-header">
-      <span class="section-label">Portfolio</span>
-      <h2 class="section-title">Mini Projects</h2>
+      <span class="section-label">Live System</span>
+      <h2 class="section-title">Stock Forecasting System</h2>
       <p class="section-subtitle">
-        Each project explores a different domain — from time-series forecasting to machine learning.
+        Explore the complete predictive time-series pipeline, interactive charts, and real-time inference simulator.
       </p>
     </div>
 
     <div class="projects-grid">
       {% for project in projects %}
-      <article class="project-card {% if project.status == 'coming-soon' %}coming-soon{% endif %}"
-               id="card-{{ project.id }}"
-               data-category="{{ project.category }}">
+      <article class="project-card" id="card-{{ project.id }}" data-category="{{ project.category }}">
 
         <!-- card header -->
         <div class="card-header">
@@ -68,11 +67,7 @@
           </div>
           <div class="card-meta">
             <span class="card-category">{{ project.category }}</span>
-            {% if project.status == 'coming-soon' %}
-            <span class="badge badge-soon">Coming Soon</span>
-            {% else %}
-            <span class="badge badge-done"><i class="fa-solid fa-circle-check"></i> Live</span>
-            {% endif %}
+            <span class="badge badge-done"><i class="fa-solid fa-circle-check"></i> Live Production</span>
           </div>
         </div>
 
@@ -91,15 +86,9 @@
 
         <!-- card footer -->
         <div class="card-footer">
-          {% if project.status == 'complete' %}
           <a href="{{ project.route }}" class="btn btn-card">
-            View Project <i class="fa-solid fa-arrow-right"></i>
+            Open Forecasting Platform <i class="fa-solid fa-arrow-right"></i>
           </a>
-          {% else %}
-          <button class="btn btn-card disabled" disabled>
-            Coming Soon <i class="fa-solid fa-clock"></i>
-          </button>
-          {% endif %}
         </div>
 
       </article>
@@ -115,34 +104,31 @@
     <div class="about-grid">
 
       <div class="about-text">
-        <span class="section-label">About</span>
-        <h2 class="section-title">Why Mini Projects?</h2>
+        <span class="section-label">Quantitative Engineering</span>
+        <h2 class="section-title">About the Forecasting Platform</h2>
         <p>
-          This website is a living collection of mini projects built to demonstrate and deepen
-          practical skills in Python programming, data analysis, machine learning, and web development.
+          This project demonstrates a production-grade approach to financial time-series forecasting. Unlike naive price regressions, it formulates market forecasting as a <strong>5-day forward trend regime classification problem</strong> and multi-horizon return estimation.
         </p>
         <p>
-          Each project is self-contained, well-documented, and comes with its own Jupyter Notebook
-          so you can follow the analysis step by step.
+          The system implements 32 backward-looking technical indicators (zero look-ahead bias), 60-day chronological sequence modeling with Stacked LSTM & RNN networks, and gradient boosted regime classifiers.
         </p>
         <p>
-          The goal is not perfection — it is progress. Every project here represents a real
-          learning experience.
+          All models are persisted on disk in <code>saved_models/</code> and execute live inference against real-time market data streamed from Yahoo Finance.
         </p>
-        <a href="#projects" class="btn btn-primary mt-1">View All Projects</a>
+        <a href="/project/stock-market" class="btn btn-primary mt-1">Open Forecasting Dashboard</a>
       </div>
 
       <div class="about-skills">
-        <h3 class="skills-title">Technologies &amp; Skills</h3>
+        <h3 class="skills-title">Core Technologies &amp; Architecture</h3>
         <div class="skill-list">
-          <div class="skill-item"><i class="fa-brands fa-python"></i><span>Python 3</span></div>
+          <div class="skill-item"><i class="fa-brands fa-python"></i><span>Python 3.11</span></div>
+          <div class="skill-item"><i class="fa-solid fa-brain"></i><span>TensorFlow / Keras</span></div>
+          <div class="skill-item"><i class="fa-solid fa-microchip"></i><span>Scikit-learn</span></div>
+          <div class="skill-item"><i class="fa-solid fa-chart-line"></i><span>Statsmodels (ARMA)</span></div>
           <div class="skill-item"><i class="fa-solid fa-database"></i><span>Pandas &amp; NumPy</span></div>
-          <div class="skill-item"><i class="fa-solid fa-brain"></i><span>Scikit-learn</span></div>
-          <div class="skill-item"><i class="fa-solid fa-chart-line"></i><span>Time-Series Analysis</span></div>
-          <div class="skill-item"><i class="fa-solid fa-flask"></i><span>Flask</span></div>
-          <div class="skill-item"><i class="fa-solid fa-chart-bar"></i><span>Matplotlib &amp; Chart.js</span></div>
-          <div class="skill-item"><i class="fa-solid fa-book"></i><span>Jupyter Notebooks</span></div>
-          <div class="skill-item"><i class="fa-solid fa-server"></i><span>REST APIs</span></div>
+          <div class="skill-item"><i class="fa-solid fa-tower-broadcast"></i><span>Yahoo Finance Live Feed</span></div>
+          <div class="skill-item"><i class="fa-solid fa-flask"></i><span>Flask REST Backend</span></div>
+          <div class="skill-item"><i class="fa-solid fa-chart-pie"></i><span>Chart.js Visualizer</span></div>
         </div>
       </div>
 

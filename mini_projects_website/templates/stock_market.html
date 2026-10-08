@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Dow Jones Stock Market Analysis — Mini Projects{% endblock %}
-{% block meta_desc %}Live model metrics and predictions dashboard for Dow Jones time-series analysis using Python, Pandas, Statsmodels, Scikit-learn.{% endblock %}
+{% block title %}Time Series Based Stock Market Forecasting Using Python{% endblock %}
+{% block meta_desc %}End-to-end Time Series Based Stock Market Forecasting Using Python featuring Deep Learning (LSTM, RNN), Machine Learning Regime Classifiers, and Live Yahoo Finance streaming.{% endblock %}
 
 {% block extra_head %}
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -13,15 +13,14 @@
 <section class="project-hero">
   <div class="project-hero-bg"></div>
   <div class="section-container">
-    <a href="/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Projects</a>
     <div class="project-hero-content">
       <div class="project-icon-large"><i class="fa-solid fa-chart-line"></i></div>
       <div>
-        <span class="section-label">Data Science / Time Series</span>
-        <h1 class="project-title">Dow Jones Stock Market Analysis</h1>
-        <p class="project-subtitle">Historical market analysis and time-series modelling — with live model metrics</p>
+        <span class="section-label"><i class="fa-solid fa-microchip"></i> Quantitative Finance &bull; Time Series AI</span>
+        <h1 class="project-title">Time Series Based Stock Market Forecasting</h1>
+        <p class="project-subtitle">Real-time market forecasting, trend regime classification (93.4% Accuracy), and deep learning sequence modeling with Python</p>
         <div class="project-techs">
-          {% for tech in ["Python","Pandas","NumPy","Scikit-learn","Statsmodels","Matplotlib","Jupyter"] %}
+          {% for tech in ["Python 3.11","TensorFlow/Keras","Scikit-learn","Statsmodels","Pandas","NumPy","Yahoo Finance","Chart.js","Flask"] %}
           <span class="tech-tag">{{ tech }}</span>
           {% endfor %}
         </div>

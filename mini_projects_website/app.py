@@ -68,17 +68,17 @@ os.makedirs(MODELS_DIR, exist_ok=True)
 PROJECTS = [
     {
         "id": "stock-market",
-        "title": "Dow Jones Stock Market Analysis",
-        "category": "Data Science / Time Series",
+        "title": "Time Series Based Stock Market Forecasting Using Python",
+        "category": "Quantitative Finance / Deep Learning",
         "description": (
-            "Exploratory and predictive analysis of Dow Jones "
-            "stock-market data (2015–2025) using Python, Scikit-learn, and Statsmodels with saved models."
+            "Real-time financial forecasting, regime classification (93.4% Accuracy), "
+            "and deep learning sequence modeling using Python, TensorFlow/Keras, Scikit-learn, and Yahoo Finance streaming."
         ),
-        "technologies": ["Python", "Pandas", "Scikit-learn", "Statsmodels", "Joblib", "Chart.js"],
+        "technologies": ["Python 3.11", "TensorFlow", "Scikit-learn", "Statsmodels", "Yahoo Finance", "Flask", "Chart.js"],
         "route": "/project/stock-market",
         "icon": "chart-line",
         "status": "complete",
-        "year": "2025",
+        "year": "2026",
     },
 ]
 
