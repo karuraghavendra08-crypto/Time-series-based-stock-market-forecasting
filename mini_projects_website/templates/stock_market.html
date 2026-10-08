@@ -199,61 +199,143 @@
 <section class="simulation-section" id="simulation">
   <div class="section-container">
     <div class="section-header left-align">
-      <span class="section-label">Real-Time ML & Deep Learning Inference</span>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span class="section-label">Real-Time ML & Deep Learning Inference</span>
+        <span class="live-market-pulse-badge" id="liveMarketPulse">
+          <span class="live-pulse-dot"></span> LIVE MARKET FEED ACTIVE
+        </span>
+      </div>
       <h2 class="section-title">Live Model Forecasting Simulator</h2>
       <p class="section-desc">
-        Select a <strong>saved model binary from disk</strong> (including trained LSTM & RNN deep learning models) to generate real-time next-day predictions.
+        Select a <strong>saved model binary from disk</strong> to generate real-time next-day predictions using <strong>live streaming market values</strong> or custom parameters.
       </p>
+    </div>
+
+    <!-- ── Live Market Source & Ticker Quick Selector ──────────────── -->
+    <div class="market-source-bar">
+      <div class="source-toggle-group">
+        <span class="source-label"><i class="fa-solid fa-satellite-dish"></i> Data Mode:</span>
+        <button type="button" class="source-btn active" id="btnModeLive" data-mode="live">
+          <i class="fa-solid fa-bolt" style="color:var(--warning)"></i> Live Market Data (yfinance)
+        </button>
+        <button type="button" class="source-btn" id="btnModeDataset" data-mode="dataset">
+          <i class="fa-solid fa-database"></i> Dataset Baseline
+        </button>
+      </div>
+
+      <div class="ticker-chips-row">
+        <span class="chips-label">Popular Tickers:</span>
+        <button type="button" class="ticker-chip active" data-ticker="^DJI">
+          <i class="fa-solid fa-chart-line"></i> ^DJI (Dow Jones)
+        </button>
+        <button type="button" class="ticker-chip" data-ticker="AAPL">
+          <i class="fa-brands fa-apple"></i> AAPL
+        </button>
+        <button type="button" class="ticker-chip" data-ticker="NVDA">
+          <i class="fa-solid fa-microchip"></i> NVDA
+        </button>
+        <button type="button" class="ticker-chip" data-ticker="MSFT">
+          <i class="fa-brands fa-microsoft"></i> MSFT
+        </button>
+        <button type="button" class="ticker-chip" data-ticker="SPY">
+          <i class="fa-solid fa-arrow-trend-up"></i> SPY (S&P 500)
+        </button>
+        <div class="custom-ticker-box">
+          <input type="text" id="customTickerInput" placeholder="Custom Ticker (e.g. TSLA)" maxlength="8">
+          <button type="button" id="btnCustomTicker" title="Fetch Ticker"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Live Quote Mini-Card ──────────────────────────────────────── -->
+    <div class="live-quote-card" id="liveQuoteCard">
+      <div class="quote-header">
+        <div>
+          <span class="quote-ticker" id="quoteTicker">^DJI</span>
+          <span class="quote-name" id="quoteName">Dow Jones Industrial Average</span>
+        </div>
+        <div class="quote-live-badge" id="quoteSourceBadge">
+          <i class="fa-solid fa-tower-broadcast"></i> Live Yahoo Finance
+        </div>
+      </div>
+      <div class="quote-metrics-row">
+        <div class="quote-metric">
+          <span class="qm-label">Real-Time Close</span>
+          <span class="qm-val font-mono" id="quotePrice">$51,212.40</span>
+        </div>
+        <div class="quote-metric">
+          <span class="qm-label">Day Move</span>
+          <span class="qm-val font-mono" id="quoteChange" style="color:var(--success)">+$32.53 (+0.06%)</span>
+        </div>
+        <div class="quote-metric">
+          <span class="qm-label">Market Date</span>
+          <span class="qm-val" id="quoteDate">8 Oct 2026</span>
+        </div>
+        <div class="quote-metric">
+          <span class="qm-label">14-Day RSI</span>
+          <span class="qm-val font-mono" id="quoteRSI">41.3 (Neutral)</span>
+        </div>
+        <div class="quote-metric">
+          <span class="qm-label">20D Volatility</span>
+          <span class="qm-val font-mono" id="quoteVol">0.0063</span>
+        </div>
+      </div>
     </div>
 
     <div class="simulation-grid">
       <!-- Controls card -->
       <div class="sim-card sim-controls-card">
-        <h3 class="sim-card-title"><i class="fa-solid fa-robot"></i> Choose Saved Model & Inputs</h3>
+        <h3 class="sim-card-title"><i class="fa-solid fa-robot"></i> Choose Saved Model & Parameters</h3>
         
         <div class="sim-form-group">
           <label class="sim-label" for="simModelSelect">Saved Model Binary:</label>
           <select id="simModelSelect" class="control-select sim-select">
             <option value="bull_bear_regime" selected>🏆 Bull/Bear Trend Regime Classifier (93.4% Accuracy) — saved_models/regime_classifier.joblib</option>
             <option value="volatility_regime">⚡ Volatility Regime Classifier (71.5% Accuracy) — saved_models/volatility_classifier.joblib</option>
-            <option value="lstm">LSTM Neural Network (60-Day Lookback) — saved_models/lstm_model.keras</option>
+            <option value="rf">Random Forest + 32 Tech Features (300 Trees) — saved_models/random_forest_lag.joblib</option>
+            <option value="gb">Gradient Boosting Classifier (300 Trees) — saved_models/gradient_boosting_clf.joblib</option>
             <option value="rnn">Simple RNN Neural Network (60-Day Lookback) — saved_models/simple_rnn_model.keras</option>
-            <option value="rf">Random Forest + Tech Features (100 Trees) — saved_models/random_forest_lag.joblib</option>
+            <option value="lstm">LSTM Neural Network (60-Day Lookback) — saved_models/lstm_model.keras</option>
+            <option value="lr">Logistic Regression + Tech Features — saved_models/linear_regression_lag.joblib</option>
             <option value="arma">ARMA(2,7) Time Series — saved_models/arma_model.pkl</option>
-            <option value="lr">Linear Regression + Tech Features — saved_models/linear_regression_lag.joblib</option>
-            <option value="baseline">Baseline Mean — saved_models/baseline_model.joblib</option>
+            <option value="baseline">Baseline Most-Frequent — saved_models/baseline_model.joblib</option>
           </select>
+        </div>
+
+        <div class="sim-lags-header">
+          <label class="sim-label"><i class="fa-solid fa-sliders"></i> Input Log-Return Features (Auto-populated from Market Feed):</label>
+          <span class="sim-badge-sub" id="lagsSourceTag">Live Feed</span>
         </div>
 
         <div class="sim-lags-grid">
           <div class="lag-input-box">
-            <label>Lag 1 (Yesterday Return)</label>
+            <label>Return 1d (t)</label>
             <input type="number" step="0.0001" id="inputLag1" class="sim-input" placeholder="e.g. 0.0025">
           </div>
           <div class="lag-input-box">
-            <label>Lag 2 (t-2 Return)</label>
+            <label>Lag 1 (t-1)</label>
             <input type="number" step="0.0001" id="inputLag2" class="sim-input" placeholder="e.g. -0.0012">
           </div>
           <div class="lag-input-box">
-            <label>Lag 3 (t-3 Return)</label>
+            <label>Lag 2 (t-2)</label>
             <input type="number" step="0.0001" id="inputLag3" class="sim-input" placeholder="e.g. 0.0041">
           </div>
           <div class="lag-input-box">
-            <label>Lag 4 (t-4 Return)</label>
-            <input type="number" step="0.0001" id="inputLag4" class="sim-input" placeholder="e.g. -0.0008">
+            <label>5-Day Return</label>
+            <input type="number" step="0.0001" id="inputLag4" class="sim-input" placeholder="e.g. 0.0055">
           </div>
           <div class="lag-input-box">
-            <label>Lag 5 (t-5 Return)</label>
-            <input type="number" step="0.0001" id="inputLag5" class="sim-input" placeholder="e.g. 0.0015">
+            <label>10-Day Return</label>
+            <input type="number" step="0.0001" id="inputLag5" class="sim-input" placeholder="e.g. -0.0026">
           </div>
         </div>
 
         <div class="sim-btn-row">
           <button id="btnRunPrediction" class="btn btn-primary">
-            <i class="fa-solid fa-bolt"></i> Run Prediction with Saved Model
+            <i class="fa-solid fa-bolt"></i> Run Inference with Saved Model
           </button>
-          <button id="btnResetLags" class="btn btn-secondary">
-            <i class="fa-solid fa-rotate-left"></i> Use Latest Real Market Data
+          <button id="btnFetchLatestMarket" class="btn btn-secondary">
+            <i class="fa-solid fa-arrows-rotate"></i> Fetch Latest Live Market Values
           </button>
         </div>
       </div>
@@ -263,42 +345,42 @@
         <h3 class="sim-card-title"><i class="fa-solid fa-chart-pie"></i> Model Forecast Result</h3>
         
         <div class="sim-result-header">
-          <span class="sim-badge" id="simModelName">Random Forest (Saved Joblib)</span>
-          <span class="sim-disk-badge"><i class="fa-solid fa-floppy-disk"></i> Loaded from saved_models/</span>
+          <span class="sim-badge" id="simModelName">Bull/Bear Regime Classifier</span>
+          <span class="sim-disk-badge" id="simSourceBadge"><i class="fa-solid fa-tower-broadcast"></i> Live Market: ^DJI</span>
         </div>
 
         <div class="sim-metric-main">
           <div class="sim-target-price">
-            <span class="sim-price-label">Predicted Next Close</span>
-            <div class="sim-price-val" id="simPriceVal">$13,108.24</div>
-            <div class="sim-price-change" id="simPriceDelta">+$4.10 (+0.031%)</div>
+            <span class="sim-price-label">Predicted Target Close</span>
+            <div class="sim-price-val" id="simPriceVal">$51,212.40</div>
+            <div class="sim-price-change" id="simPriceDelta">+$0.00 (+0.000%)</div>
           </div>
           <div class="sim-direction-badge" id="simDirectionBadge">
             <i class="fa-solid fa-arrow-trend-up" id="simDirIcon"></i>
-            <span id="simDirText">BULLISH / UP</span>
+            <span id="simDirText">BULLISH REGIME</span>
           </div>
         </div>
 
         <div class="sim-details-grid">
           <div class="sim-detail-item">
-            <span class="sim-detail-label">Predicted Log-Return (ld_Close)</span>
+            <span class="sim-detail-label">Market Baseline Close</span>
+            <span class="sim-detail-value font-mono" id="simPriorClose">$51,212.40</span>
+          </div>
+          <div class="sim-detail-item">
+            <span class="sim-detail-label">Model Confidence / Prob UP</span>
+            <span class="sim-detail-value font-mono text-accent" id="simProbVal">97.7%</span>
+          </div>
+          <div class="sim-detail-item">
+            <span class="sim-detail-label">Implied Log-Return Move</span>
             <span class="sim-detail-value font-mono" id="simReturnVal">+0.000312</span>
           </div>
           <div class="sim-detail-item">
-            <span class="sim-detail-label">Baseline Prior Close</span>
-            <span class="sim-detail-value font-mono" id="simPriorClose">$13,104.14</span>
-          </div>
-          <div class="sim-detail-item">
-            <span class="sim-detail-label">Model R² Score</span>
-            <span class="sim-detail-value font-mono" id="simR2Score">-0.0115</span>
-          </div>
-          <div class="sim-detail-item">
-            <span class="sim-detail-label">Model Test MAE</span>
-            <span class="sim-detail-value font-mono" id="simTestMAE">0.008490</span>
+            <span class="sim-detail-label">Model Test Accuracy</span>
+            <span class="sim-detail-value font-mono text-success" id="simAccuracyVal">93.4%</span>
           </div>
           <div class="sim-detail-item">
             <span class="sim-detail-label">Binary Model File</span>
-            <span class="sim-detail-value font-mono" id="simBinaryFile">random_forest_lag.joblib</span>
+            <span class="sim-detail-value font-mono" id="simBinaryFile">regime_classifier.joblib</span>
           </div>
           <div class="sim-detail-item">
             <span class="sim-detail-label">Inference Latency</span>

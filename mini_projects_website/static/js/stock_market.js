@@ -300,28 +300,110 @@ async function loadPredChart() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  4. LIVE INFERENCE SIMULATOR (SAVED MODEL PREDICTION)
+//  4. LIVE INFERENCE SIMULATOR (SAVED MODEL PREDICTION & LIVE MARKET VALUES)
 // ══════════════════════════════════════════════════════════════════════════════
-let latestMarketFeatures = null;
+let currentMarketMode = "live"; // "live" | "dataset"
+let currentTicker = "^DJI";
+let latestMarketPayload = null;
+
+async function fetchLatestMarketValues(ticker = "^DJI", autoPredict = true) {
+  currentTicker = ticker;
+  const quoteCard = document.getElementById("liveQuoteCard");
+  const fetchBtn = document.getElementById("btnFetchLatestMarket");
+  const origBtnHtml = fetchBtn ? fetchBtn.innerHTML : "";
+  
+  if (fetchBtn) {
+    fetchBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Fetching Live Market Data…';
+    fetchBtn.disabled = true;
+  }
+
+  try {
+    const url = `/api/live-market-data?ticker=${encodeURIComponent(ticker)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.error || "Failed to fetch live market feed");
+
+    latestMarketPayload = data;
+
+    // Update Quote Card UI
+    const tickerElem = document.getElementById("quoteTicker");
+    const nameElem   = document.getElementById("quoteName");
+    const priceElem  = document.getElementById("quotePrice");
+    const changeElem = document.getElementById("quoteChange");
+    const dateElem   = document.getElementById("quoteDate");
+    const rsiElem    = document.getElementById("quoteRSI");
+    const volElem    = document.getElementById("quoteVol");
+    const sourceElem = document.getElementById("quoteSourceBadge");
+
+    if (tickerElem) tickerElem.textContent = data.ticker;
+    if (nameElem)   nameElem.textContent = data.name;
+    if (priceElem)  priceElem.textContent = `$${data.last_close.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    
+    if (changeElem) {
+      const sign = data.day_change >= 0 ? "+" : "";
+      changeElem.textContent = `${sign}$${data.day_change.toFixed(2)} (${sign}${data.day_pct_change.toFixed(2)}%)`;
+      changeElem.style.color = data.day_change >= 0 ? "var(--success)" : "var(--danger)";
+    }
+
+    if (dateElem)   dateElem.textContent = data.last_date;
+    if (rsiElem)    rsiElem.textContent = `${data.rsi_actual.toFixed(1)} ${data.rsi_actual > 70 ? '(Overbought)' : data.rsi_actual < 30 ? '(Oversold)' : '(Neutral)'}`;
+    if (volElem)    volElem.textContent = data.volatility_20.toFixed(4);
+    if (sourceElem) sourceElem.innerHTML = `<i class="fa-solid fa-tower-broadcast"></i> ${data.source}`;
+
+    // Populate Lags Grid
+    if (data.lags && data.lags.length >= 5) {
+      document.getElementById("inputLag1").value = data.lags[0].toFixed(6);
+      document.getElementById("inputLag2").value = data.lags[1].toFixed(6);
+      document.getElementById("inputLag3").value = data.lags[2].toFixed(6);
+      document.getElementById("inputLag4").value = data.lags[3].toFixed(6);
+      document.getElementById("inputLag5").value = data.lags[4].toFixed(6);
+    }
+
+    const tag = document.getElementById("lagsSourceTag");
+    if (tag) {
+      tag.textContent = currentMarketMode === "live" ? `Live Feed (${data.ticker})` : "Dataset Baseline";
+      tag.className = currentMarketMode === "live" ? "sim-badge-sub live" : "sim-badge-sub";
+    }
+
+    if (autoPredict) {
+      await runLivePrediction();
+    }
+  } catch (err) {
+    console.warn("Live market fetch error:", err);
+    // Fallback to initial simulator data
+    await initSimulatorControls();
+  fetchLatestMarketValues('^DJI');
+  } finally {
+    if (fetchBtn) {
+      fetchBtn.innerHTML = origBtnHtml || '<i class="fa-solid fa-arrows-rotate"></i> Fetch Latest Live Market Values';
+      fetchBtn.disabled = false;
+    }
+  }
+}
 
 async function runLivePrediction() {
   const modelType = document.getElementById("simModelSelect").value;
   const btn = document.getElementById("btnRunPrediction");
-  const origBtnText = btn.innerHTML;
-  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Running inference…';
-  btn.disabled = true;
+  const origBtnText = btn ? btn.innerHTML : "";
+  if (btn) {
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Running inference…';
+    btn.disabled = true;
+  }
 
   const t0 = performance.now();
 
   try {
-    const lag1 = parseFloat(document.getElementById("inputLag1").value) || 0;
-    const lag2 = parseFloat(document.getElementById("inputLag2").value) || 0;
-    const lag3 = parseFloat(document.getElementById("inputLag3").value) || 0;
-    const lag4 = parseFloat(document.getElementById("inputLag4").value) || 0;
-    const lag5 = parseFloat(document.getElementById("inputLag5").value) || 0;
+    const lag1 = document.getElementById("inputLag1").value;
+    const lag2 = document.getElementById("inputLag2").value;
+    const lag3 = document.getElementById("inputLag3").value;
+    const lag4 = document.getElementById("inputLag4").value;
+    const lag5 = document.getElementById("inputLag5").value;
 
     const queryParams = new URLSearchParams({
       model: modelType,
+      use_live_market: currentMarketMode === "live" ? "true" : "false",
+      ticker: currentTicker,
       lag_1: lag1,
       lag_2: lag2,
       lag_3: lag3,
@@ -332,32 +414,67 @@ async function runLivePrediction() {
     const res = await fetch(`/api/predict?${queryParams.toString()}`);
     const data = await res.json();
     const t1 = performance.now();
-    const latency = Math.round(t1 - t0);
+    const latency = Math.max(1, Math.round(t1 - t0));
 
     if (!data.success) throw new Error(data.error || "Inference failed");
 
     // Update UI elements
-    document.getElementById("simModelName").textContent = data.model_name;
-    document.getElementById("simBinaryFile").textContent = data.model_file;
-    document.getElementById("simPriceVal").textContent = `$${data.predicted_close_price.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    const nameElem = document.getElementById("simModelName");
+    if (nameElem) nameElem.textContent = data.model_name;
+
+    const fileElem = document.getElementById("simBinaryFile");
+    if (fileElem) fileElem.textContent = data.model_file;
+
+    const priceElem = document.getElementById("simPriceVal");
+    if (priceElem) priceElem.textContent = `$${data.predicted_close_price.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     
-    const sign = data.price_change_dollars >= 0 ? "+" : "";
-    document.getElementById("simPriceDelta").textContent = `${sign}$${data.price_change_dollars.toFixed(2)} (${sign}${data.percent_change.toFixed(3)}%)`;
-    document.getElementById("simPriceDelta").style.color = data.dir_color;
-
-    document.getElementById("simReturnVal").textContent = `${sign}${data.predicted_log_return.toFixed(6)}`;
-    document.getElementById("simPriorClose").textContent = `$${data.last_known_close.toLocaleString("en-US", {minimumFractionDigits: 2})}`;
-    document.getElementById("simLatency").textContent = `${latency} ms`;
-
-    const r2Elem = document.getElementById("simR2Score");
-    if (r2Elem) {
-      r2Elem.textContent = data.r2_score !== null && data.r2_score !== undefined ? data.r2_score.toFixed(4) : "—";
-      r2Elem.style.color = (data.r2_score >= 0) ? "#10b981" : "#fca5a5";
+    const deltaElem = document.getElementById("simPriceDelta");
+    if (deltaElem) {
+      const sign = data.price_change_dollars >= 0 ? "+" : "";
+      deltaElem.textContent = `${sign}$${data.price_change_dollars.toFixed(2)} (${sign}${data.percent_change.toFixed(3)}%)`;
+      deltaElem.style.color = data.dir_color;
     }
 
-    const maeElem = document.getElementById("simTestMAE");
-    if (maeElem) {
-      maeElem.textContent = data.trained_mae !== null && data.trained_mae !== undefined ? data.trained_mae.toFixed(6) : "—";
+    const returnElem = document.getElementById("simReturnVal");
+    if (returnElem) {
+      const sign = data.predicted_log_return >= 0 ? "+" : "";
+      returnElem.textContent = `${sign}${data.predicted_log_return.toFixed(6)}`;
+    }
+
+    const priorElem = document.getElementById("simPriorClose");
+    if (priorElem) priorElem.textContent = `$${data.last_known_close.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+    const latElem = document.getElementById("simLatency");
+    if (latElem) latElem.textContent = `${latency} ms`;
+
+    const probElem = document.getElementById("simProbVal");
+    if (probElem) {
+      const probPct = (data.prob_up * 100).toFixed(1);
+      probElem.textContent = `${probPct}%`;
+      probElem.style.color = data.prob_up >= 0.5 ? "var(--success)" : "var(--danger)";
+    }
+
+    const accElem = document.getElementById("simAccuracyVal");
+    if (accElem) {
+      if (data.dir_accuracy !== null && data.dir_accuracy !== undefined) {
+        accElem.textContent = `${data.dir_accuracy.toFixed(1)}%`;
+      } else if (data.trained_mae !== null && data.trained_mae !== undefined) {
+        accElem.textContent = `MAE: ${data.trained_mae.toFixed(4)}`;
+      } else {
+        accElem.textContent = "—";
+      }
+    }
+
+    // Source Badge
+    const srcBadge = document.getElementById("simSourceBadge");
+    if (srcBadge) {
+      if (data.is_live_mode) {
+        srcBadge.innerHTML = `<i class="fa-solid fa-tower-broadcast"></i> ${data.market_source}`;
+        srcBadge.className = "sim-disk-badge live";
+      } else {
+        srcBadge.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> ${data.market_source}`;
+        srcBadge.className = "sim-disk-badge";
+      }
     }
 
     // Direction badge
@@ -365,17 +482,22 @@ async function runLivePrediction() {
     const dirIcon  = document.getElementById("simDirIcon");
     const dirText  = document.getElementById("simDirText");
 
-    dirBadge.style.background = data.predicted_log_return >= 0 ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)";
-    dirBadge.style.borderColor = data.predicted_log_return >= 0 ? "rgba(16,185,129,0.35)" : "rgba(239,68,68,0.35)";
-    dirBadge.style.color = data.dir_color;
-    dirIcon.className = `fa-solid fa-${data.dir_icon}`;
-    dirText.textContent = data.direction;
+    if (dirBadge && dirIcon && dirText) {
+      const isPositive = data.direction.includes("BULLISH") || data.predicted_log_return >= 0;
+      dirBadge.style.background = isPositive ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)";
+      dirBadge.style.borderColor = isPositive ? "rgba(16,185,129,0.35)" : "rgba(239,68,68,0.35)";
+      dirBadge.style.color = data.dir_color;
+      dirIcon.className = `fa-solid fa-${data.dir_icon}`;
+      dirText.textContent = data.direction;
+    }
 
   } catch(err) {
-    alert("Inference Error: " + err.message);
+    console.error("Prediction error:", err);
   } finally {
-    btn.innerHTML = origBtnText;
-    btn.disabled = false;
+    if (btn) {
+      btn.innerHTML = origBtnText || '<i class="fa-solid fa-bolt"></i> Run Inference with Saved Model';
+      btn.disabled = false;
+    }
   }
 }
 
@@ -384,22 +506,111 @@ async function populateInitialSimulatorData() {
     const res = await fetch("/api/predict?model=rf");
     const data = await res.json();
     if (data.success && data.input_features) {
-      latestMarketFeatures = data.input_features;
-      // API returns return_lag_1 … return_lag_5 (not lag_1 … lag_5)
       const f = data.input_features;
-      document.getElementById("inputLag1").value = ((f.return_lag_1)  ?? 0).toFixed(6);
-      document.getElementById("inputLag2").value = ((f.return_lag_2)  ?? 0).toFixed(6);
-      document.getElementById("inputLag3").value = ((f.return_lag_3)  ?? 0).toFixed(6);
-      document.getElementById("inputLag4").value = ((f.return_lag_5)  ?? 0).toFixed(6);
-      document.getElementById("inputLag5").value = ((f.return_lag_10) ?? 0).toFixed(6);
-
-      // Auto-run the selected model once data is ready
+      document.getElementById("inputLag1").value = ((f.return_1)     ?? (f.return_lag_1) ?? 0).toFixed(6);
+      document.getElementById("inputLag2").value = ((f.return_lag_1) ?? 0).toFixed(6);
+      document.getElementById("inputLag3").value = ((f.return_lag_2) ?? 0).toFixed(6);
+      document.getElementById("inputLag4").value = ((f.return_5)     ?? (f.return_lag_5) ?? 0).toFixed(6);
+      document.getElementById("inputLag5").value = ((f.return_10)    ?? (f.return_lag_10) ?? 0).toFixed(6);
       runLivePrediction();
     }
   } catch(e) {
     console.warn("Simulator init:", e);
   }
 }
+
+function initSimulatorControls() {
+  // Live vs Dataset mode switcher
+  const btnLive = document.getElementById("btnModeLive");
+  const btnDataset = document.getElementById("btnModeDataset");
+
+  if (btnLive && btnDataset) {
+    btnLive.addEventListener("click", () => {
+      currentMarketMode = "live";
+      btnLive.classList.add("active");
+      btnDataset.classList.remove("active");
+      fetchLatestMarketValues(currentTicker);
+    });
+
+    btnDataset.addEventListener("click", () => {
+      currentMarketMode = "dataset";
+      btnDataset.classList.add("active");
+      btnLive.classList.remove("active");
+      initSimulatorControls();
+  fetchLatestMarketValues('^DJI');
+      const tag = document.getElementById("lagsSourceTag");
+      if (tag) {
+        tag.textContent = "Dataset Baseline (Dec 2025)";
+        tag.className = "sim-badge-sub";
+      }
+      const srcBadge = document.getElementById("simSourceBadge");
+      if (srcBadge) {
+        srcBadge.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Dataset Snapshot (saved_models/)';
+        srcBadge.className = "sim-disk-badge";
+      }
+    });
+  }
+
+  // Ticker Quick-chips
+  document.querySelectorAll(".ticker-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      document.querySelectorAll(".ticker-chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      const ticker = chip.dataset.ticker;
+      if (btnLive) {
+        currentMarketMode = "live";
+        btnLive.classList.add("active");
+        btnDataset.classList.remove("active");
+      }
+      fetchLatestMarketValues(ticker);
+    });
+  });
+
+  // Custom ticker input
+  const customInput = document.getElementById("customTickerInput");
+  const btnCustom = document.getElementById("btnCustomTicker");
+  if (customInput && btnCustom) {
+    const handleCustomSearch = () => {
+      const sym = customInput.value.trim().toUpperCase();
+      if (!sym) return;
+      document.querySelectorAll(".ticker-chip").forEach(c => c.classList.remove("active"));
+      if (btnLive) {
+        currentMarketMode = "live";
+        btnLive.classList.add("active");
+        btnDataset.classList.remove("active");
+      }
+      fetchLatestMarketValues(sym);
+    };
+
+    btnCustom.addEventListener("click", handleCustomSearch);
+    customInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleCustomSearch();
+      }
+    });
+  }
+
+  // Model Selector Change
+  const modelSelect = document.getElementById("simModelSelect");
+  if (modelSelect) {
+    modelSelect.addEventListener("change", () => {
+      runLivePrediction();
+    });
+  }
+
+  // Buttons
+  const btnRun = document.getElementById("btnRunPrediction");
+  if (btnRun) {
+    btnRun.addEventListener("click", () => runLivePrediction());
+  }
+
+  const btnFetch = document.getElementById("btnFetchLatestMarket");
+  if (btnFetch) {
+    btnFetch.addEventListener("click", () => fetchLatestMarketValues(currentTicker));
+  }
+}
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  5. SAVED MODEL STATUS & RETRAINING
@@ -482,7 +693,8 @@ document.addEventListener("DOMContentLoaded", () => {
   loadPredChart();
 
   // 4. Simulator
-  populateInitialSimulatorData();
+  initSimulatorControls();
+  fetchLatestMarketValues('^DJI');
   const btnRun = document.getElementById("btnRunPrediction");
   if (btnRun) btnRun.addEventListener("click", runLivePrediction);
   
