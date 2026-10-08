@@ -2,8 +2,27 @@ import os
 import sys
 import importlib.util
 
-# ── Comprehensive NumPy BitGenerator Unpickling Compatibility Patch ───────────
+# ── Comprehensive NumPy Unpickling Compatibility Patch ────────────────────────
 try:
+    import sys
+    import numpy as np
+
+    if hasattr(np, "core"):
+        if "numpy._core.numeric" not in sys.modules and hasattr(np.core, "numeric"):
+            sys.modules["numpy._core.numeric"] = np.core.numeric
+        if "numpy._core.multiarray" not in sys.modules and hasattr(np.core, "multiarray"):
+            sys.modules["numpy._core.multiarray"] = np.core.multiarray
+        if "numpy._core.umath" not in sys.modules and hasattr(np.core, "umath"):
+            sys.modules["numpy._core.umath"] = np.core.umath
+
+    if hasattr(np, "_core"):
+        if "numpy.core.numeric" not in sys.modules and hasattr(np._core, "numeric"):
+            sys.modules["numpy.core.numeric"] = np._core.numeric
+        if "numpy.core.multiarray" not in sys.modules and hasattr(np._core, "multiarray"):
+            sys.modules["numpy.core.multiarray"] = np._core.multiarray
+        if "numpy.core.umath" not in sys.modules and hasattr(np._core, "umath"):
+            sys.modules["numpy.core.umath"] = np._core.umath
+
     import numpy.random._pickle as _npr_pickle
     if hasattr(_npr_pickle, "BitGenerators") and isinstance(_npr_pickle.BitGenerators, dict):
         for k, v in list(_npr_pickle.BitGenerators.items()):

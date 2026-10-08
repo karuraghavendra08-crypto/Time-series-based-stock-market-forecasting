@@ -2,8 +2,32 @@ import os
 import sys
 import importlib.util
 
-# ── Comprehensive NumPy BitGenerator Unpickling Compatibility Patch ───────────
+# ── Comprehensive NumPy Unpickling Compatibility Patch ────────────────────────
 try:
+    import sys
+    import types
+    import numpy as np
+
+    if hasattr(np, "_core") and "numpy.core" not in sys.modules:
+        _mc = types.ModuleType("numpy.core")
+        _mc.numeric = getattr(np._core, "numeric", np._core)
+        _mc.multiarray = getattr(np._core, "multiarray", np._core)
+        _mc.umath = getattr(np._core, "umath", np._core)
+        sys.modules["numpy.core"] = _mc
+        sys.modules["numpy.core.numeric"] = _mc.numeric
+        sys.modules["numpy.core.multiarray"] = _mc.multiarray
+        sys.modules["numpy.core.umath"] = _mc.umath
+
+    if hasattr(np, "core") and "numpy._core" not in sys.modules:
+        _m = types.ModuleType("numpy._core")
+        _m.numeric = getattr(np.core, "numeric", np.core)
+        _m.multiarray = getattr(np.core, "multiarray", np.core)
+        _m.umath = getattr(np.core, "umath", np.core)
+        sys.modules["numpy._core"] = _m
+        sys.modules["numpy._core.numeric"] = _m.numeric
+        sys.modules["numpy._core.multiarray"] = _m.multiarray
+        sys.modules["numpy._core.umath"] = _m.umath
+
     import numpy.random._pickle as _npr_pickle
     if hasattr(_npr_pickle, "BitGenerators") and isinstance(_npr_pickle.BitGenerators, dict):
         for k, v in list(_npr_pickle.BitGenerators.items()):
