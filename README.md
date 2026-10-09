@@ -203,3 +203,14 @@ Would love to hear your feedback! 🙌
 #MachineLearning #DataScience #Python #StockMarket #DeepLearning #Flask
 #TimeSeries #LSTM #MLProject #AI #FinTech #OpenToWork
 ```
+
+---
+
+## 📊 Presentation Deck & Slides
+
+Looking for a ready-to-present PowerPoint slide deck for faculty or interviewers?
+Check the complete [PRESENTATION_SLIDES_FOR_CHATGPT.md](file:///c:/Users/KARU%20SRISHYLAM/TIME%20SERIES%20BASED%20STOCK%20MARKET%20FORECASTING%20USING%20PYTHON/PRESENTATION_SLIDES_FOR_CHATGPT.md) file which contains:
+- 12 slide outlines with clean structure and visual cues.
+- 1-click ChatGPT Master Prompt that creates and downloads the `.pptx` file directly.
+- 30-second clear speaker notes for every single slide.
+
