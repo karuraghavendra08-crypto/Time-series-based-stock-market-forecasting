@@ -2,6 +2,25 @@ import os
 import sys
 import importlib.util
 
+# ── Comprehensive NumPy 2.x to 1.x Unpickling Compatibility Bridge ─────────────
+try:
+    import numpy as _np
+    if "numpy._core" not in sys.modules:
+        try:
+            import numpy._core
+        except (ModuleNotFoundError, ImportError):
+            import numpy.core as _np_core
+            sys.modules["numpy._core"] = _np_core
+            for _sub in [
+                "numeric", "multiarray", "umath", "_dtype", "records", 
+                "defchararray", "fromnumeric", "shape_base", "numerictypes", 
+                "arrayprint", "overrides", "_methods"
+            ]:
+                if hasattr(_np_core, _sub):
+                    sys.modules[f"numpy._core.{_sub}"] = getattr(_np_core, _sub)
+except Exception:
+    pass
+
 # ── Comprehensive NumPy BitGenerator Unpickling Compatibility Patch ───────────
 try:
     import numpy.random._pickle as _npr_pickle

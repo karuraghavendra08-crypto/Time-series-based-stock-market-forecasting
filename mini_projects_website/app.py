@@ -19,6 +19,24 @@ import pandas as pd
 from datetime import datetime
 from flask import Flask, render_template, jsonify, request, send_file
 
+# ── Comprehensive NumPy 2.x to 1.x Unpickling Compatibility Bridge ─────────────
+try:
+    if "numpy._core" not in sys.modules:
+        try:
+            import numpy._core
+        except (ModuleNotFoundError, ImportError):
+            import numpy.core as _np_core
+            sys.modules["numpy._core"] = _np_core
+            for _sub in [
+                "numeric", "multiarray", "umath", "_dtype", "records", 
+                "defchararray", "fromnumeric", "shape_base", "numerictypes", 
+                "arrayprint", "overrides", "_methods"
+            ]:
+                if hasattr(_np_core, _sub):
+                    sys.modules[f"numpy._core.{_sub}"] = getattr(_np_core, _sub)
+except Exception:
+    pass
+
 # ── NumPy BitGenerator Unpickling Compatibility Patch ─────────────────────────
 try:
     import numpy.random._pickle as _npr_pickle
