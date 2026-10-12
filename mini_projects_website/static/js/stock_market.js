@@ -339,18 +339,29 @@ async function runInference() {
 
     // 4. Feature Drivers List
     const featList = document.getElementById("featuresDriversList");
-    if (featList && data.feature_importance && data.feature_importance.length > 0) {
-      featList.innerHTML = "";
-      const maxImp = Math.max(...data.feature_importance.map((f) => f.importance || 0.1), 0.01);
-      data.feature_importance.forEach((f) => {
-        const barPct = Math.round((f.importance / maxImp) * 100);
-        featList.innerHTML += `
-          <div class="feature-bar-row">
-            <span class="feature-name">${f.feature}</span>
-            <div class="feature-bar-track"><div class="feature-bar-fill" style="width: ${barPct}%;"></div></div>
-            <span class="feature-weight font-mono">${(f.importance * 100).toFixed(1)}%</span>
-          </div>`;
-      });
+    if (featList) {
+      if (data.feature_importance && data.feature_importance.length > 0) {
+        featList.innerHTML = "";
+        const maxImp = Math.max(...data.feature_importance.map((f) => f.importance || 0.1), 0.01);
+        data.feature_importance.forEach((f) => {
+          const barPct = Math.round((f.importance / maxImp) * 100);
+          featList.innerHTML += `
+            <div class="feature-bar-row">
+              <span class="feature-name">${f.feature}</span>
+              <div class="feature-bar-track"><div class="feature-bar-fill" style="width: ${barPct}%;"></div></div>
+              <span class="feature-weight font-mono">${(f.importance * 100).toFixed(1)}%</span>
+            </div>`;
+        });
+      } else {
+        const taskNote = data.task_type === "return_regression"
+          ? "ARMA is a statistical model; Gini feature importance is not applicable. The model uses auto-regressive and moving-average terms of the log-return series."
+          : data.task_type === "benchmark"
+          ? "Naive benchmark always predicts the majority class; no feature importance is applicable."
+          : data.task_type && data.task_type.includes("deep_learning")
+          ? "Deep learning models do not expose tree-based Gini importance. Predictions rely on the 30-day scaled feature sequence."
+          : "Feature importance not available for this model.";
+        featList.innerHTML = `<div style="color: var(--text-secondary); font-size: 12.5px; padding: 8px 0;">${taskNote}</div>`;
+      }
     }
 
     // 5. Test Context

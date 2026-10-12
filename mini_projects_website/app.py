@@ -110,13 +110,32 @@ _LOADED_MODELS = {}
 _LIVE_MARKET_CACHE = {}
 
 # ── Model Loader ──────────────────────────────────────────────────────────────
+def _probe_joblib(path: str) -> bool:
+    """Return True if path can be loaded by joblib without error."""
+    try:
+        joblib.load(path)
+        return True
+    except Exception:
+        return False
+
 def ensure_models_exist():
-    """Ensure trained models and metric files exist on disk."""
+    """Ensure trained models and metric files exist and are loadable.
+    If the key joblib artifact is corrupted or incompatible (e.g. built with
+    a different NumPy), trigger a full retrain so Render always has working models.
+    """
     metrics_path = os.path.join(MODELS_DIR, "model_metrics.json")
     rf_path = os.path.join(MODELS_DIR, "random_forest_lag.joblib")
-    if not os.path.exists(metrics_path) or not os.path.exists(rf_path):
-        from train_models import train_and_save_all
-        train_and_save_all()
+    needs_train = (
+        not os.path.exists(metrics_path)
+        or not os.path.exists(rf_path)
+        or not _probe_joblib(rf_path)  # catches numpy._core pickle failures
+    )
+    if needs_train:
+        try:
+            from train_models import train_and_save_all
+            train_and_save_all()
+        except Exception as te:
+            print(f"[WARN] Model training failed: {te}")
 
 def load_saved_models():
     """Load persistent model binaries from disk into memory."""
