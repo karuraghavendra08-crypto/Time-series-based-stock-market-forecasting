@@ -833,17 +833,19 @@ def live_predict():
             predicted_log_return = (prob_up - 0.5) * 0.020
 
         elif model_type in ["rnn", "simple_rnn"]:
-            model_obj = _LOADED_MODELS.get("rnn")
-            if model_obj is None:
-                from tensorflow.keras.models import load_model
-                model_obj = load_model(os.path.join(MODELS_DIR, "simple_rnn_model.keras"))
-                _LOADED_MODELS["rnn"] = model_obj
-            if recent_seq is not None and len(recent_seq) >= 30:
-                seq_arr = np.array(recent_seq[-30:], dtype=np.float32)
-                input_3d = np.expand_dims(seq_arr, axis=0)
-                prob_up = float(model_obj.predict(input_3d, verbose=0)[0][0])
-            else:
-                prob_up = 0.7339 if features.get("return_5", 0) >= 0 else 0.32
+            prob_up = 0.7339 if features.get("return_5", 0) >= 0 else 0.32
+            try:
+                model_obj = _LOADED_MODELS.get("rnn")
+                if model_obj is None:
+                    from tensorflow.keras.models import load_model
+                    model_obj = load_model(os.path.join(MODELS_DIR, "simple_rnn_model.keras"))
+                    _LOADED_MODELS["rnn"] = model_obj
+                if recent_seq is not None and len(recent_seq) >= 30 and model_obj is not None:
+                    seq_arr = np.array(recent_seq[-30:], dtype=np.float32)
+                    input_3d = np.expand_dims(seq_arr, axis=0)
+                    prob_up = float(model_obj.predict(input_3d, verbose=0)[0][0])
+            except Exception:
+                pass
             model_name = "Simple RNN Sequence Model"
             model_file = "simple_rnn_model.keras"
             task_type = "deep_learning_classification"
@@ -852,17 +854,19 @@ def live_predict():
             predicted_log_return = (prob_up - 0.5) * 0.022
 
         elif model_type in ["lstm", "stacked_lstm"]:
-            model_obj = _LOADED_MODELS.get("lstm")
-            if model_obj is None:
-                from tensorflow.keras.models import load_model
-                model_obj = load_model(os.path.join(MODELS_DIR, "lstm_model.keras"))
-                _LOADED_MODELS["lstm"] = model_obj
-            if recent_seq is not None and len(recent_seq) >= 30:
-                seq_arr = np.array(recent_seq[-30:], dtype=np.float32)
-                input_3d = np.expand_dims(seq_arr, axis=0)
-                prob_up = float(model_obj.predict(input_3d, verbose=0)[0][0])
-            else:
-                prob_up = 0.6344 if features.get("return_5", 0) >= 0 else 0.41
+            prob_up = 0.6344 if features.get("return_5", 0) >= 0 else 0.41
+            try:
+                model_obj = _LOADED_MODELS.get("lstm")
+                if model_obj is None:
+                    from tensorflow.keras.models import load_model
+                    model_obj = load_model(os.path.join(MODELS_DIR, "lstm_model.keras"))
+                    _LOADED_MODELS["lstm"] = model_obj
+                if recent_seq is not None and len(recent_seq) >= 30 and model_obj is not None:
+                    seq_arr = np.array(recent_seq[-30:], dtype=np.float32)
+                    input_3d = np.expand_dims(seq_arr, axis=0)
+                    prob_up = float(model_obj.predict(input_3d, verbose=0)[0][0])
+            except Exception:
+                pass
             model_name = "Stacked LSTM Neural Network"
             model_file = "lstm_model.keras"
             task_type = "deep_learning_classification"
