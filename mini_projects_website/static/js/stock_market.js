@@ -1,725 +1,551 @@
 /**
- * stock_market.js
- * ---------------
- * 1. Close-price line chart (fetches /api/stock-data)
- * 2. Model metrics dashboard (fetches /api/model-metrics)
- * 3. Multi-series predictions chart (fetches /api/model-predictions)
- * 4. Live inference simulator powered by saved models (fetches /api/predict)
- * 5. Saved model binary file registry & retraining (fetches /api/model-status)
+ * TIME SERIES BASED STOCK MARKET FORECASTING USING PYTHON
+ * Frontend Controller — Quantitative Research Laboratory & Forecaster
+ * Features:
+ *   - Verified dynamic dataset metadata toggling (Modern 2015-2025 vs Historical 1901-2012)
+ *   - Safe Chart.js lifecycle management with zero canvas memory leaks
+ *   - Live instrument quotes & real-time prediction breakdown
+ *   - Dedicated Model Laboratory benchmarks and visual metric comparisons
+ *   - Error boundary handling with zero indefinite loading states
  */
-"use strict";
 
-// ── Color Tokens ─────────────────────────────────────────────────────────────
-const C = {
-  accent:    "#3b82f6",
-  accentLt:  "#60a5fa",
-  purple:    "#a78bfa",
-  amber:     "#f59e0b",
-  white:     "#f0f4ff",
-  success:   "#10b981",
-  danger:    "#ef4444",
-  muted:     "#4d6680",
-  surface:   "#0c1524",
-  grid:      "rgba(59,130,246,0.08)",
-};
+// ── State Management ─────────────────────────────────────────────────────────
+let mainChart = null;
+let labAccuracyChart = null;
+let labAucChart = null;
 
-// ── Shared Tooltip Config ────────────────────────────────────────────────────
-const TOOLTIP = {
-  backgroundColor: C.surface,
-  borderColor: "rgba(59,130,246,0.35)",
-  borderWidth: 1,
-  titleColor: "#8ba4c4",
-  bodyColor:  C.white,
-  padding: 12,
-};
+let currentDatasetKey = "modern";
+let currentTicker = "^DJI";
+let currentModel = "bull_bear_regime";
+let currentUnit = "pts";
 
-function makeGradient(ctx, top, bottom, colorTop, colorBottom) {
-  const g = ctx.createLinearGradient(0, top, 0, bottom);
-  g.addColorStop(0, colorTop);
-  g.addColorStop(1, colorBottom);
-  return g;
+// ── Initialization ───────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  initializeDashboard();
+});
+
+async function initializeDashboard() {
+  try {
+    // 1. Load initial dataset metadata
+    await switchDatasetMetadata("modern", false);
+
+    // 2. Load and render main forecast chart
+    await loadMainForecastChart();
+
+    // 3. Fetch initial market quote
+    await refreshMarketQuote(false);
+
+    // 4. Run initial inference for prediction breakdown
+    await runInference();
+
+    // 5. Load Model Laboratory metrics table and charts
+    await loadModelLaboratory();
+
+  } catch (err) {
+    console.error("Dashboard initialization notice:", err);
+  }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  1. CLOSE-PRICE CHART
-// ══════════════════════════════════════════════════════════════════════════════
-let stockChart = null;
+// ── 1. Dynamic Dataset Metadata (Phase 2 & 3) ─────────────────────────────────
+async function switchDatasetMetadata(datasetKey, reloadChart = true) {
+  currentDatasetKey = datasetKey;
 
-async function loadCloseChart(n) {
-  const status = document.getElementById("chartStatus");
-  status.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Loading…';
+  const btnModern = document.getElementById("btnModernDataset");
+  const btnHist = document.getElementById("btnHistoricalDataset");
+  if (btnModern && btnHist) {
+    btnModern.classList.toggle("active", datasetKey === "modern");
+    btnHist.classList.toggle("active", datasetKey === "historical");
+  }
+
   try {
-    const res  = await fetch(`/api/stock-data?n=${n}`);
+    const res = await fetch(`/api/dataset-metadata?dataset=${datasetKey}`);
+    const data = await res.json();
+    if (data.status === "Unavailable" || data.status === "Error") {
+      throw new Error(data.message || "Dataset unavailable");
+    }
+
+    const titleElem = document.getElementById("metaDatasetTitle");
+    const obsElem = document.getElementById("metaValidObs");
+    const dateRangeElem = document.getElementById("metaDateRange");
+    const qualityElem = document.getElementById("metaQuality");
+    const closeElem = document.getElementById("metaLastClose");
+    const highLowElem = document.getElementById("metaHighLow");
+
+    if (titleElem) titleElem.textContent = data.name;
+    if (obsElem) obsElem.textContent = Number(data.valid_observations).toLocaleString();
+    if (dateRangeElem) dateRangeElem.innerHTML = `${data.first_date_display} &rarr; ${data.last_date_display}`;
+    if (qualityElem) qualityElem.textContent = `${data.duplicate_records} Duplicates • ${data.missing_records} NaN`;
+    if (closeElem) closeElem.textContent = `${Number(data.latest_close).toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${data.unit}`;
+    if (highLowElem) highLowElem.textContent = `${Number(data.highest_close).toLocaleString()} / ${Number(data.lowest_close).toLocaleString()} ${data.unit}`;
+
+    if (reloadChart) {
+      await loadMainForecastChart();
+    }
+  } catch (err) {
+    console.warn("Dataset metadata fetch error:", err);
+  }
+}
+
+// ── 2. Main Forecast Chart (Phase 7 & 8) ──────────────────────────────────────
+async function loadMainForecastChart(forecastPoint = null) {
+  const statusElem = document.getElementById("chartObservationsCount");
+  if (statusElem) statusElem.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Loading series…';
+
+  try {
+    const res = await fetch(`/api/stock-data?dataset=${currentDatasetKey}&n=150`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
-    status.innerHTML = `<i class="fa-solid fa-circle-check" style="color:${C.success}"></i> ${data.count.toLocaleString()} observations`;
+    const canvas = document.getElementById("mainForecastChart");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
 
-    if (stockChart) { stockChart.destroy(); stockChart = null; }
-    const ctx = document.getElementById("stockChart").getContext("2d");
+    // Dispose old chart instance safely to avoid memory leaks
+    if (mainChart) {
+      mainChart.destroy();
+      mainChart = null;
+    }
 
-    stockChart = new Chart(ctx, {
+    const labels = [...data.dates];
+    const prices = [...data.closes];
+    currentUnit = data.unit || "pts";
+
+    // Dataset series setup
+    const datasets = [
+      {
+        label: `Historical Close (${currentUnit})`,
+        data: prices,
+        borderColor: "#465BFF", // Electric Blue
+        backgroundColor: "rgba(70, 91, 255, 0.05)",
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        fill: true,
+        tension: 0.15,
+      }
+    ];
+
+    // If a projected forecast point is supplied, append it
+    if (forecastPoint && forecastPoint.price) {
+      labels.push("Forward (t+5)");
+      const forecastSeries = new Array(prices.length).fill(null);
+      forecastSeries[forecastSeries.length - 1] = prices[prices.length - 1]; // Anchor
+      forecastSeries.push(forecastPoint.price);
+
+      datasets.push({
+        label: `Model Forecast (${forecastPoint.direction})`,
+        data: forecastSeries,
+        borderColor: forecastPoint.color || "#B8E64B",
+        backgroundColor: "transparent",
+        borderWidth: 2.5,
+        borderDash: [5, 4],
+        pointRadius: (ctx) => (ctx.dataIndex === labels.length - 1 ? 6 : 0),
+        pointBackgroundColor: forecastPoint.color || "#B8E64B",
+        pointBorderColor: "#FFFFFF",
+        pointBorderWidth: 2,
+        tension: 0,
+      });
+    }
+
+    mainChart = new Chart(ctx, {
       type: "line",
       data: {
-        labels: data.dates,
-        datasets: [{
-          label: "Close Price",
-          data: data.closes,
-          borderColor: C.accent,
-          borderWidth: 1.5,
-          pointRadius: 0,
-          pointHoverRadius: 5,
-          pointHoverBackgroundColor: C.accentLt,
-          pointHoverBorderColor: "#fff",
-          fill: true,
-          backgroundColor: (ctx2) => {
-            const { chartArea } = ctx2.chart;
-            if (!chartArea) return "transparent";
-            return makeGradient(ctx, chartArea.top, chartArea.bottom,
-              "rgba(59,130,246,0.28)", "rgba(59,130,246,0.01)");
-          },
-          tension: 0.3,
-        }],
+        labels: labels,
+        datasets: datasets,
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: { duration: 500 },
-        interaction: { mode: "index", intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: { ...TOOLTIP,
-            callbacks: {
-              title: i => i[0].label,
-              label: i => `  Close: $${i.parsed.y.toLocaleString("en-US",{minimumFractionDigits:2})}`,
-            },
-          },
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: "index",
+          intersect: false,
         },
-        scales: {
-          x: { grid: { color: C.grid }, ticks: { color: C.muted, maxTicksLimit: 8, maxRotation: 0, font: { family:"'JetBrains Mono',monospace", size:11 } } },
-          y: { grid: { color: C.grid }, ticks: { color: C.muted, font: { family:"'JetBrains Mono',monospace", size:11 },
-               callback: v => "$" + v.toLocaleString("en-US",{maximumFractionDigits:0}) } },
-        },
-      },
-    });
-  } catch(e) {
-    status.innerHTML = `<i class="fa-solid fa-circle-exclamation" style="color:${C.danger}"></i> ${e.message}`;
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  2. MODEL METRICS DASHBOARD
-// ══════════════════════════════════════════════════════════════════════════════
-async function loadModelMetrics() {
-  const metaBar  = document.getElementById("metaBar");
-  const maeCards = document.getElementById("maeCards");
-  const tbody    = document.getElementById("modelTbody");
-
-  try {
-    const res  = await fetch("/api/model-metrics");
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-
-    const { metrics, meta } = data;
-
-    // ── Meta info bar ───────────────────────────────────────────────────
-    metaBar.innerHTML = `
-      <i class="fa-solid fa-circle-check" style="color:${C.success}"></i>
-      Models trained on <strong>${meta.n_obs.toLocaleString()}</strong> historical days
-      &nbsp;|&nbsp; Target: <code>${meta.series}</code>
-      &nbsp;|&nbsp; <strong>${meta.models_source}</strong>
-    `;
-
-    // ── Find best MAE among runnable models ─────────────────────────────
-    const withMAE  = metrics.filter(m => m.mae !== null && m.mae !== undefined);
-    const bestMAE  = withMAE.length ? Math.min(...withMAE.map(m => m.mae)) : null;
-
-    // ── Score cards ──────────────────────────────────────────────────
-    maeCards.innerHTML = "";
-    withMAE.forEach(m => {
-      const isBest = m.is_best || (bestMAE !== null && m.mae === bestMAE);
-      const cls    = isBest ? "best-card" : "good-card";
-      let badge    = isBest ? "🏆 Top Model" : "Trained";
-      if (m.accuracy_highlight) {
-        badge = `⚡ ${m.accuracy_highlight}`;
-      }
-      
-      const primaryVal = m.dir_accuracy && m.dir_accuracy > 70 
-        ? `${m.dir_accuracy.toFixed(1)}% <span style="font-size:0.9rem;font-weight:400;color:var(--text-secondary)">Acc</span>`
-        : m.mae.toFixed(6);
-
-      const r2Txt = m.r2_score !== null && m.r2_score !== undefined ? `R²: ${m.r2_score.toFixed(4)}` : "";
-      const dirTxt = m.dir_accuracy !== null && m.dir_accuracy !== undefined ? `Dir: ${m.dir_accuracy.toFixed(1)}%` : "";
-
-      maeCards.innerHTML += `
-        <div class="mae-card ${cls}">
-          <div class="mae-card-model">${m.model}</div>
-          <div class="mae-card-value">${primaryVal}</div>
-          <span class="mae-card-badge">${badge}</span>
-          <div class="mae-card-cv" style="display:flex;justify-content:space-between;align-items:center;">
-            <span><i class="fa-solid fa-chart-simple"></i> ${r2Txt || dirTxt}</span>
-            <span><i class="fa-solid fa-microchip"></i> ${m.type ? m.type.split(' ')[0] : 'ML'}</span>
-          </div>
-        </div>`;
-    });
-
-    // ── Table rows ──────────────────────────────────────────────────────
-    tbody.innerHTML = "";
-    metrics.forEach((m, idx) => {
-      const mae  = m.mae !== null && m.mae !== undefined
-                     ? `<span class="mae-val font-mono">${m.mae.toFixed(6)}</span>`
-                     : `<span style="color:var(--text-muted);font-style:italic">—</span>`;
-      const rmse = m.rmse !== null && m.rmse !== undefined
-                     ? `<span class="font-mono" style="color:#93c5fd">${m.rmse.toFixed(6)}</span>`
-                     : `<span style="color:var(--text-muted);font-style:italic">—</span>`;
-      const r2   = m.r2_score !== null && m.r2_score !== undefined
-                     ? `<span class="font-mono" style="color:${m.r2_score >= 0 ? '#10b981' : '#fca5a5'};font-weight:600">${m.r2_score.toFixed(4)}</span>`
-                     : `<span style="color:var(--text-muted);font-style:italic">—</span>`;
-      const dir  = m.dir_accuracy !== null && m.dir_accuracy !== undefined
-                     ? `<span class="font-mono" style="color:var(--accent-light)">${m.dir_accuracy.toFixed(1)}%</span>`
-                     : `<span style="color:var(--text-muted);font-style:italic">—</span>`;
-
-      const isBest = bestMAE !== null && m.mae === bestMAE;
-      const statusBadge = m.mae !== null
-        ? `<span class="badge badge-done"><i class="fa-solid fa-floppy-disk"></i> Saved .${m.file ? m.file.split('.').pop() : 'bin'}</span>`
-        : `<span class="badge badge-soon"><i class="fa-solid fa-triangle-exclamation"></i> External data</span>`;
-      const note = m.file ? `<br><small style="color:var(--accent-light);font-family:var(--font-mono)">saved_models/${m.file}</small>` : "";
-
-      tbody.innerHTML += `
-        <tr class="${isBest ? "best-row" : ""}">
-          <td>${idx + 1}</td>
-          <td><span class="model-name">${m.model}${isBest ? " 🏆" : ""}</span>${note}</td>
-          <td>${m.desc}</td>
-          <td>${mae}</td>
-          <td>${rmse}</td>
-          <td>${r2}</td>
-          <td>${dir}</td>
-          <td>${statusBadge}</td>
-        </tr>`;
-    });
-
-  } catch(e) {
-    metaBar.innerHTML = `<i class="fa-solid fa-circle-exclamation" style="color:${C.danger}"></i> Error: ${e.message}`;
-    tbody.innerHTML   = `<tr><td colspan="8" class="loading-row" style="color:${C.danger}">${e.message}</td></tr>`;
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  3. PREDICTIONS CHART
-// ══════════════════════════════════════════════════════════════════════════════
-let predChart = null;
-
-const SERIES_CFG = {
-  actual:   { label: "Actual ld_Close",   color: C.white,   dash: [] },
-  lstm:     { label: "LSTM (Deep Learning)", color: "#10b981", dash: [] },
-  rnn:      { label: "Simple RNN",        color: "#06b6d4", dash: [4,2] },
-  rf:       { label: "Random Forest",     color: C.accent,  dash: [] },
-  arma:     { label: "ARMA(2,7)",         color: C.purple,  dash: [6,3] },
-  lr:       { label: "Linear Regression", color: "#38bdf8", dash: [2,2] },
-  baseline: { label: "Baseline",          color: C.amber,   dash: [4,4] },
-};
-
-function buildDatasets(preds) {
-  return Object.entries(SERIES_CFG).map(([key, cfg]) => {
-    const vals = preds[key] || [];
-    return {
-      label: cfg.label,
-      data:  vals,
-      borderColor: cfg.color,
-      borderWidth: key === "actual" ? 2 : 1.5,
-      borderDash: cfg.dash,
-      pointRadius: 0,
-      pointHoverRadius: 4,
-      fill: false,
-      tension: 0.2,
-      hidden: false,
-      _key: key,
-    };
-  });
-}
-
-async function loadPredChart() {
-  const status = document.getElementById("predStatus");
-  status.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Loading predictions from saved models…';
-  try {
-    const res   = await fetch("/api/model-predictions");
-    const preds = await res.json();
-    if (preds.error) throw new Error(preds.error);
-
-    const n = preds.actual ? preds.actual.length : 0;
-    status.innerHTML = `<i class="fa-solid fa-circle-check" style="color:${C.success}"></i> ${n.toLocaleString()} test observations plotted`;
-
-    if (predChart) { predChart.destroy(); predChart = null; }
-    const ctx = document.getElementById("predChart").getContext("2d");
-
-    predChart = new Chart(ctx, {
-      type: "line",
-      data: { labels: preds.dates, datasets: buildDatasets(preds) },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: { duration: 600 },
-        interaction: { mode: "index", intersect: false },
         plugins: {
           legend: {
             display: true,
             position: "top",
             labels: {
-              color: "#8ba4c4",
-              boxWidth: 20,
-              font: { size: 12, family:"'Inter',sans-serif" },
+              boxWidth: 12,
+              font: { family: "Inter", size: 12 },
+              color: "#111216",
             },
           },
-          tooltip: { ...TOOLTIP,
+          tooltip: {
+            backgroundColor: "#111216",
+            titleFont: { family: "JetBrains Mono", size: 12 },
+            bodyFont: { family: "Inter", size: 12 },
+            padding: 10,
             callbacks: {
-              title: i => i[0].label,
-              label: i => `  ${i.dataset.label}: ${i.parsed.y.toFixed(6)}`,
+              label: (context) => {
+                const val = context.parsed.y;
+                return val !== null
+                  ? ` ${context.dataset.label}: ${val.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currentUnit}`
+                  : "";
+              },
             },
           },
         },
         scales: {
-          x: { grid: { color: C.grid }, ticks: { color: C.muted, maxTicksLimit: 10, maxRotation: 20, font:{family:"'JetBrains Mono',monospace",size:10} } },
-          y: { grid: { color: C.grid }, ticks: { color: C.muted, font:{family:"'JetBrains Mono',monospace",size:11}, callback: v => v.toFixed(4) } },
+          x: {
+            grid: { color: "rgba(17, 18, 22, 0.04)" },
+            ticks: {
+              font: { family: "JetBrains Mono", size: 10 },
+              color: "#676A73",
+              maxTicksLimit: 8,
+            },
+          },
+          y: {
+            grid: { color: "rgba(17, 18, 22, 0.05)" },
+            ticks: {
+              font: { family: "JetBrains Mono", size: 11 },
+              color: "#676A73",
+              callback: (val) => `${val.toLocaleString()} ${currentUnit}`,
+            },
+          },
         },
       },
     });
 
-    // ── Toggle buttons ────────────────────────────────────────────────
-    document.querySelectorAll(".toggle-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const key = btn.dataset.series;
-        const ds  = predChart.data.datasets.find(d => d._key === key);
-        if (!ds) return;
-        ds.hidden = !ds.hidden;
-        btn.classList.toggle("active", !ds.hidden);
-        predChart.update();
-      });
-    });
+    if (statusElem) {
+      statusElem.textContent = `${prices.length} observations plotted (${data.first_date} → ${data.last_date})`;
+    }
 
-  } catch(e) {
-    status.innerHTML = `<i class="fa-solid fa-circle-exclamation" style="color:${C.danger}"></i> ${e.message}`;
+  } catch (err) {
+    if (statusElem) {
+      statusElem.innerHTML = `<span style="color:#FF725E"><i class="fa-solid fa-triangle-exclamation"></i> Error loading chart: ${err.message}</span>`;
+    }
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  4. LIVE INFERENCE SIMULATOR (SAVED MODEL PREDICTION & LIVE MARKET VALUES)
-// ══════════════════════════════════════════════════════════════════════════════
-let currentMarketMode = "live"; // "live" | "dataset"
-let currentTicker = "^DJI";
-let latestMarketPayload = null;
+// ── 3. Market Quote & Ticker Selection (Phase 3 & 7) ──────────────────────────
+async function onInstrumentChange() {
+  const selectElem = document.getElementById("selectTicker");
+  if (!selectElem) return;
+  currentTicker = selectElem.value;
+  await refreshMarketQuote(true);
+  await runInference();
+}
 
-async function fetchLatestMarketValues(ticker = "^DJI", autoPredict = true) {
-  currentTicker = ticker;
-  const quoteCard = document.getElementById("liveQuoteCard");
-  const fetchBtn = document.getElementById("btnFetchLatestMarket");
-  const origBtnHtml = fetchBtn ? fetchBtn.innerHTML : "";
-  
-  if (fetchBtn) {
-    fetchBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Fetching Live Market Data…';
-    fetchBtn.disabled = true;
-  }
+async function refreshMarketQuote(autoPredict = true) {
+  const pill = document.getElementById("livePricePill");
+  const refreshBtn = document.getElementById("btnRefreshQuote");
+
+  if (pill) pill.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Refreshing…';
+  if (refreshBtn) refreshBtn.disabled = true;
 
   try {
-    const url = `/api/live-market-data?ticker=${encodeURIComponent(ticker)}`;
-    const res = await fetch(url);
+    const res = await fetch(`/api/live-market-data?ticker=${currentTicker}`);
     const data = await res.json();
+    if (!data.success) throw new Error(data.error || "Unable to retrieve quote");
 
-    if (!data.success) throw new Error(data.error || "Failed to fetch live market feed");
+    currentUnit = data.unit || "$";
+    const sign = data.day_change >= 0 ? "+" : "";
+    const colorStyle = data.day_change >= 0 ? "color:#2D6B00;" : "color:#B82512;";
 
-    latestMarketPayload = data;
-
-    // Update Quote Card UI
-    const tickerElem = document.getElementById("quoteTicker");
-    const nameElem   = document.getElementById("quoteName");
-    const priceElem  = document.getElementById("quotePrice");
-    const changeElem = document.getElementById("quoteChange");
-    const dateElem   = document.getElementById("quoteDate");
-    const rsiElem    = document.getElementById("quoteRSI");
-    const volElem    = document.getElementById("quoteVol");
-    const sourceElem = document.getElementById("quoteSourceBadge");
-
-    if (tickerElem) tickerElem.textContent = data.ticker;
-    if (nameElem)   nameElem.textContent = data.name;
-    if (priceElem)  priceElem.textContent = `$${data.last_close.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    
-    if (changeElem) {
-      const sign = data.day_change >= 0 ? "+" : "";
-      changeElem.textContent = `${sign}$${data.day_change.toFixed(2)} (${sign}${data.day_pct_change.toFixed(2)}%)`;
-      changeElem.style.color = data.day_change >= 0 ? "var(--success)" : "var(--danger)";
+    if (pill) {
+      pill.innerHTML = `
+        <strong>${data.ticker}</strong>: ${data.last_close.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${currentUnit}
+        <span style="${colorStyle}; font-weight:600; margin-left:4px;">(${sign}${data.day_pct_change}%)</span>
+      `;
     }
 
-    if (dateElem)   dateElem.textContent = data.last_date;
-    if (rsiElem)    rsiElem.textContent = `${data.rsi_actual.toFixed(1)} ${data.rsi_actual > 70 ? '(Overbought)' : data.rsi_actual < 30 ? '(Oversold)' : '(Neutral)'}`;
-    if (volElem)    volElem.textContent = data.volatility_20.toFixed(4);
-    if (sourceElem) sourceElem.innerHTML = `<i class="fa-solid fa-tower-broadcast"></i> ${data.source}`;
-
-    // Populate Lags Grid
-    if (data.lags && data.lags.length >= 5) {
-      document.getElementById("inputLag1").value = data.lags[0].toFixed(6);
-      document.getElementById("inputLag2").value = data.lags[1].toFixed(6);
-      document.getElementById("inputLag3").value = data.lags[2].toFixed(6);
-      document.getElementById("inputLag4").value = data.lags[3].toFixed(6);
-      document.getElementById("inputLag5").value = data.lags[4].toFixed(6);
+    // If recent closes are available in live data, update the main chart with this instrument's recent candles!
+    if (data.recent_closes && data.recent_closes.length > 5 && mainChart) {
+      // Re-anchor chart with instrument's actual candles
+      const dates = data.recent_dates || [];
+      mainChart.data.labels = [...dates];
+      mainChart.data.datasets[0].label = `${data.ticker} Recent Daily Close (${currentUnit})`;
+      mainChart.data.datasets[0].data = [...data.recent_closes];
+      mainChart.options.scales.y.ticks.callback = (val) => `${val.toLocaleString()} ${currentUnit}`;
+      mainChart.update();
     }
 
-    const tag = document.getElementById("lagsSourceTag");
-    if (tag) {
-      tag.textContent = currentMarketMode === "live" ? `Live Feed (${data.ticker})` : "Dataset Baseline";
-      tag.className = currentMarketMode === "live" ? "sim-badge-sub live" : "sim-badge-sub";
-    }
-
-    if (autoPredict) {
-      await runLivePrediction();
-    }
   } catch (err) {
-    console.warn("Live market fetch error:", err);
-    // Fallback to initial simulator data
-    await initSimulatorControls();
-  fetchLatestMarketValues('^DJI');
-  } finally {
-    if (fetchBtn) {
-      fetchBtn.innerHTML = origBtnHtml || '<i class="fa-solid fa-arrows-rotate"></i> Fetch Latest Live Market Values';
-      fetchBtn.disabled = false;
+    if (pill) {
+      pill.innerHTML = `<span style="color:#FF725E"><i class="fa-solid fa-triangle-exclamation"></i> Live feed delayed</span>`;
     }
+  } finally {
+    if (refreshBtn) refreshBtn.disabled = false;
   }
 }
 
-async function runLivePrediction() {
-  const modelType = document.getElementById("simModelSelect").value;
-  const btn = document.getElementById("btnRunPrediction");
-  const origBtnText = btn ? btn.innerHTML : "";
+// ── 4. Live Prediction & Breakdown Panel (Phase 4, 5, 10, 11) ───────────────────
+function onModelChange() {
+  const select = document.getElementById("selectModel");
+  if (!select) return;
+  currentModel = select.value;
+  runInference();
+}
+
+async function runInference() {
+  const btn = document.getElementById("btnRunInference");
   if (btn) {
-    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Running inference…';
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Computing…';
     btn.disabled = true;
   }
 
-  const t0 = performance.now();
-
   try {
-    const lag1 = document.getElementById("inputLag1").value;
-    const lag2 = document.getElementById("inputLag2").value;
-    const lag3 = document.getElementById("inputLag3").value;
-    const lag4 = document.getElementById("inputLag4").value;
-    const lag5 = document.getElementById("inputLag5").value;
-
-    const queryParams = new URLSearchParams({
-      model: modelType,
-      use_live_market: currentMarketMode === "live" ? "true" : "false",
+    const query = new URLSearchParams({
+      model: currentModel,
       ticker: currentTicker,
-      lag_1: lag1,
-      lag_2: lag2,
-      lag_3: lag3,
-      lag_4: lag4,
-      lag_5: lag5,
+      use_live_market: "true",
     });
 
-    const res = await fetch(`/api/predict?${queryParams.toString()}`);
+    const res = await fetch(`/api/predict?${query.toString()}`);
     const data = await res.json();
-    const t1 = performance.now();
-    const latency = Math.max(1, Math.round(t1 - t0));
-
     if (!data.success) throw new Error(data.error || "Inference failed");
 
-    // Update UI elements
-    const nameElem = document.getElementById("simModelName");
-    if (nameElem) nameElem.textContent = data.model_name;
+    // 1. Update Regime Banner
+    const banner = document.getElementById("predRegimeBanner");
+    const taskLabel = document.getElementById("predTaskTypeLabel");
+    const dirSymbol = document.getElementById("predDirSymbol");
+    const dirText = document.getElementById("predDirectionText");
+    const probVal = document.getElementById("predProbValue");
+    const probLabel = document.getElementById("predProbLabel");
 
-    const fileElem = document.getElementById("simBinaryFile");
-    if (fileElem) fileElem.textContent = data.model_file;
+    const isBull = data.prob_up >= 0.5;
+    if (banner) {
+      banner.className = `regime-banner ${isBull ? "bullish" : "bearish"}`;
+    }
+    if (taskLabel) taskLabel.textContent = `${data.target_name} (${data.forecast_horizon})`;
+    if (dirSymbol) dirSymbol.textContent = data.dir_symbol || (isBull ? "▲" : "▼");
+    if (dirText) dirText.textContent = data.direction;
+    if (probVal) probVal.textContent = `${data.confidence_pct}%`;
+    if (probLabel) probLabel.textContent = isBull ? "Bullish Probability" : "Bearish Probability";
 
-    const priceElem = document.getElementById("simPriceVal");
-    if (priceElem) priceElem.textContent = `$${data.predicted_close_price.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    
-    const deltaElem = document.getElementById("simPriceDelta");
+    // 2. Numerical Forecast Grid (Verified Math)
+    const baseElem = document.getElementById("predBaselineClose");
+    const targetElem = document.getElementById("predTargetClose");
+    const deltaElem = document.getElementById("predPriceDelta");
+    const pctElem = document.getElementById("predPercentDelta");
+
+    const unit = data.unit || currentUnit;
+    if (baseElem) baseElem.textContent = `${data.baseline_close.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${unit}`;
+    if (targetElem) targetElem.textContent = `${data.predicted_target_price.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${unit}`;
+
+    const deltaSign = data.price_change >= 0 ? "+" : "";
     if (deltaElem) {
-      const sign = data.price_change_dollars >= 0 ? "+" : "";
-      deltaElem.textContent = `${sign}$${data.price_change_dollars.toFixed(2)} (${sign}${data.percent_change.toFixed(3)}%)`;
-      deltaElem.style.color = data.dir_color;
+      deltaElem.textContent = `${deltaSign}${data.price_change.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${unit}`;
+      deltaElem.className = `num-cell-value font-mono ${data.price_change >= 0 ? "delta-pos" : "delta-neg"}`;
+    }
+    if (pctElem) {
+      pctElem.textContent = `${deltaSign}${data.percent_change.toFixed(3)}%`;
+      pctElem.className = `num-cell-value font-mono ${data.percent_change >= 0 ? "delta-pos" : "delta-neg"}`;
     }
 
-    const returnElem = document.getElementById("simReturnVal");
-    if (returnElem) {
-      const sign = data.predicted_log_return >= 0 ? "+" : "";
-      returnElem.textContent = `${sign}${data.predicted_log_return.toFixed(6)}`;
+    // 3. Plain-English Interpretation Box
+    const interpElem = document.getElementById("predInterpretationText");
+    if (interpElem) interpElem.textContent = data.interpretation;
+
+    // 4. Feature Drivers List
+    const featList = document.getElementById("featuresDriversList");
+    if (featList && data.feature_importance && data.feature_importance.length > 0) {
+      featList.innerHTML = "";
+      const maxImp = Math.max(...data.feature_importance.map((f) => f.importance || 0.1), 0.01);
+      data.feature_importance.forEach((f) => {
+        const barPct = Math.round((f.importance / maxImp) * 100);
+        featList.innerHTML += `
+          <div class="feature-bar-row">
+            <span class="feature-name">${f.feature}</span>
+            <div class="feature-bar-track"><div class="feature-bar-fill" style="width: ${barPct}%;"></div></div>
+            <span class="feature-weight font-mono">${(f.importance * 100).toFixed(1)}%</span>
+          </div>`;
+      });
     }
 
-    const priorElem = document.getElementById("simPriorClose");
-    if (priorElem) priorElem.textContent = `$${data.last_known_close.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    // 5. Test Context
+    const testSampleElem = document.getElementById("predTestSampleCount");
+    const testAccElem = document.getElementById("predTestAcc");
+    if (testSampleElem) testSampleElem.textContent = `${data.test_sample_count} test samples`;
+    if (testAccElem) testAccElem.textContent = data.test_accuracy ? `${data.test_accuracy.toFixed(2)}%` : "N/A (Continuous)";
 
-    const latElem = document.getElementById("simLatency");
-    if (latElem) latElem.textContent = `${latency} ms`;
-
-    const probElem = document.getElementById("simProbVal");
-    if (probElem) {
-      const probPct = (data.prob_up * 100).toFixed(1);
-      probElem.textContent = `${probPct}%`;
-      probElem.style.color = data.prob_up >= 0.5 ? "var(--success)" : "var(--danger)";
+    // 6. Update Main Forecast Chart with Projected Forward Step
+    if (mainChart) {
+      loadMainForecastChart({
+        price: data.predicted_target_price,
+        direction: data.direction,
+        color: isBull ? "#B8E64B" : "#FF725E",
+      });
     }
 
-    const accElem = document.getElementById("simAccuracyVal");
-    if (accElem) {
-      if (data.dir_accuracy !== null && data.dir_accuracy !== undefined) {
-        accElem.textContent = `${data.dir_accuracy.toFixed(1)}%`;
-      } else if (data.trained_mae !== null && data.trained_mae !== undefined) {
-        accElem.textContent = `MAE: ${data.trained_mae.toFixed(4)}`;
-      } else {
-        accElem.textContent = "—";
-      }
+  } catch (err) {
+    const interpElem = document.getElementById("predInterpretationText");
+    if (interpElem) {
+      interpElem.innerHTML = `<span style="color:#FF725E"><i class="fa-solid fa-triangle-exclamation"></i> Inference Error: ${err.message}</span>`;
     }
-
-    // Source Badge
-    const srcBadge = document.getElementById("simSourceBadge");
-    if (srcBadge) {
-      if (data.is_live_mode) {
-        srcBadge.innerHTML = `<i class="fa-solid fa-tower-broadcast"></i> ${data.market_source}`;
-        srcBadge.className = "sim-disk-badge live";
-      } else {
-        srcBadge.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> ${data.market_source}`;
-        srcBadge.className = "sim-disk-badge";
-      }
-    }
-
-    // Direction badge
-    const dirBadge = document.getElementById("simDirectionBadge");
-    const dirIcon  = document.getElementById("simDirIcon");
-    const dirText  = document.getElementById("simDirText");
-
-    if (dirBadge && dirIcon && dirText) {
-      const isPositive = data.direction.includes("BULLISH") || data.predicted_log_return >= 0;
-      dirBadge.style.background = isPositive ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)";
-      dirBadge.style.borderColor = isPositive ? "rgba(16,185,129,0.35)" : "rgba(239,68,68,0.35)";
-      dirBadge.style.color = data.dir_color;
-      dirIcon.className = `fa-solid fa-${data.dir_icon}`;
-      dirText.textContent = data.direction;
-    }
-
-  } catch(err) {
-    console.error("Prediction error:", err);
   } finally {
     if (btn) {
-      btn.innerHTML = origBtnText || '<i class="fa-solid fa-bolt"></i> Run Inference with Saved Model';
+      btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Run Forecast';
       btn.disabled = false;
     }
   }
 }
 
-async function populateInitialSimulatorData() {
-  try {
-    const res = await fetch("/api/predict?model=rf");
-    const data = await res.json();
-    if (data.success && data.input_features) {
-      const f = data.input_features;
-      document.getElementById("inputLag1").value = ((f.return_1)     ?? (f.return_lag_1) ?? 0).toFixed(6);
-      document.getElementById("inputLag2").value = ((f.return_lag_1) ?? 0).toFixed(6);
-      document.getElementById("inputLag3").value = ((f.return_lag_2) ?? 0).toFixed(6);
-      document.getElementById("inputLag4").value = ((f.return_5)     ?? (f.return_lag_5) ?? 0).toFixed(6);
-      document.getElementById("inputLag5").value = ((f.return_10)    ?? (f.return_lag_10) ?? 0).toFixed(6);
-      runLivePrediction();
-    }
-  } catch(e) {
-    console.warn("Simulator init:", e);
+// ── 5. Model Laboratory (Phase 9 & 10) ─────────────────────────────────────────
+function switchLabTab(tabKey) {
+  const btnTable = document.getElementById("btnTabTable");
+  const btnCharts = document.getElementById("btnTabCharts");
+  const contentTable = document.getElementById("labTabContentTable");
+  const contentCharts = document.getElementById("labTabContentCharts");
+
+  if (btnTable && btnCharts) {
+    btnTable.classList.toggle("active", tabKey === "table");
+    btnCharts.classList.toggle("active", tabKey === "charts");
+  }
+  if (contentTable && contentCharts) {
+    contentTable.style.display = tabKey === "table" ? "block" : "none";
+    contentCharts.style.display = tabKey === "charts" ? "block" : "none";
+  }
+
+  // Render charts when user switches to charts tab
+  if (tabKey === "charts") {
+    setTimeout(renderLabCharts, 50);
   }
 }
 
-function initSimulatorControls() {
-  // Live vs Dataset mode switcher
-  const btnLive = document.getElementById("btnModeLive");
-  const btnDataset = document.getElementById("btnModeDataset");
+let labMetricsCache = [];
 
-  if (btnLive && btnDataset) {
-    btnLive.addEventListener("click", () => {
-      currentMarketMode = "live";
-      btnLive.classList.add("active");
-      btnDataset.classList.remove("active");
-      fetchLatestMarketValues(currentTicker);
-    });
-
-    btnDataset.addEventListener("click", () => {
-      currentMarketMode = "dataset";
-      btnDataset.classList.add("active");
-      btnLive.classList.remove("active");
-      initSimulatorControls();
-  fetchLatestMarketValues('^DJI');
-      const tag = document.getElementById("lagsSourceTag");
-      if (tag) {
-        tag.textContent = "Dataset Baseline (Dec 2025)";
-        tag.className = "sim-badge-sub";
-      }
-      const srcBadge = document.getElementById("simSourceBadge");
-      if (srcBadge) {
-        srcBadge.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Dataset Snapshot (saved_models/)';
-        srcBadge.className = "sim-disk-badge";
-      }
-    });
-  }
-
-  // Ticker Quick-chips
-  document.querySelectorAll(".ticker-chip").forEach(chip => {
-    chip.addEventListener("click", () => {
-      document.querySelectorAll(".ticker-chip").forEach(c => c.classList.remove("active"));
-      chip.classList.add("active");
-      const ticker = chip.dataset.ticker;
-      if (btnLive) {
-        currentMarketMode = "live";
-        btnLive.classList.add("active");
-        btnDataset.classList.remove("active");
-      }
-      fetchLatestMarketValues(ticker);
-    });
-  });
-
-  // Custom ticker input
-  const customInput = document.getElementById("customTickerInput");
-  const btnCustom = document.getElementById("btnCustomTicker");
-  if (customInput && btnCustom) {
-    const handleCustomSearch = () => {
-      const sym = customInput.value.trim().toUpperCase();
-      if (!sym) return;
-      document.querySelectorAll(".ticker-chip").forEach(c => c.classList.remove("active"));
-      if (btnLive) {
-        currentMarketMode = "live";
-        btnLive.classList.add("active");
-        btnDataset.classList.remove("active");
-      }
-      fetchLatestMarketValues(sym);
-    };
-
-    btnCustom.addEventListener("click", handleCustomSearch);
-    customInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        handleCustomSearch();
-      }
-    });
-  }
-
-  // Model Selector Change
-  const modelSelect = document.getElementById("simModelSelect");
-  if (modelSelect) {
-    modelSelect.addEventListener("change", () => {
-      runLivePrediction();
-    });
-  }
-
-  // Buttons
-  const btnRun = document.getElementById("btnRunPrediction");
-  if (btnRun) {
-    btnRun.addEventListener("click", () => runLivePrediction());
-  }
-
-  const btnFetch = document.getElementById("btnFetchLatestMarket");
-  if (btnFetch) {
-    btnFetch.addEventListener("click", () => fetchLatestMarketValues(currentTicker));
-  }
-}
-
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  5. SAVED MODEL STATUS & RETRAINING
-// ══════════════════════════════════════════════════════════════════════════════
-async function loadSavedModelsStatus() {
-  const tbody = document.getElementById("savedModelsTbody");
-  if (!tbody) return;
-
+async function loadModelLaboratory() {
+  const tbody = document.getElementById("labTableBody");
   try {
-    const res = await fetch("/api/model-status");
+    const res = await fetch("/api/model-metrics");
     const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    if (!data.models) throw new Error("No model metrics returned");
 
+    labMetricsCache = data.models;
     tbody.innerHTML = "";
-    data.files.forEach(f => {
-      const ext = f.name.split('.').pop();
-      let badgeCls = "file-badge-joblib";
-      if (ext === "pkl") badgeCls = "file-badge-pkl";
-      if (ext === "json") badgeCls = "file-badge-json";
-      if (ext === "keras") badgeCls = "file-badge-keras";
+
+    data.models.forEach((m) => {
+      const isBest = m.is_best === true;
+      const accStr = m.dir_accuracy !== null && m.dir_accuracy !== undefined ? `${m.dir_accuracy.toFixed(2)}%` : "—";
+      const aucStr = m.roc_auc !== null && m.roc_auc !== undefined ? m.roc_auc.toFixed(4) : "—";
+      const precStr = m.precision !== null && m.precision !== undefined ? `${m.precision.toFixed(2)}%` : "—";
+      const recStr = m.recall !== null && m.recall !== undefined ? `${m.recall.toFixed(2)}%` : "—";
+      const f1Str = m.f1_score !== null && m.f1_score !== undefined ? m.f1_score.toFixed(4) : "—";
+      const maeStr = m.mae !== null && m.mae !== undefined ? `${m.mae.toFixed(6)}` : "N/A";
+
+      const taskClass = m.task === "classification" ? "classification" : m.task === "regression" ? "regression" : "benchmark";
 
       tbody.innerHTML += `
-        <tr>
-          <td><i class="fa-solid fa-file-code" style="color:var(--accent-light);margin-right:8px;"></i><strong class="font-mono">${f.name}</strong></td>
-          <td><span class="${badgeCls}">.${ext.toUpperCase()}</span></td>
-          <td class="font-mono">${f.size_kb.toLocaleString()} KB</td>
-          <td style="color:var(--text-secondary);font-size:0.85rem">${f.modified}</td>
-          <td><span class="badge badge-done"><i class="fa-solid fa-circle-check"></i> ${f.status}</span></td>
-        </tr>
-      `;
+        <tr class="${isBest ? "highlight-best" : ""}">
+          <td>
+            <strong>${m.model}</strong>${isBest ? ' <span style="color:#2D5200;">🏆 Best</span>' : ''}
+            <br><small class="font-mono" style="color:var(--text-muted); font-size:11px;">saved_models/${m.file}</small>
+          </td>
+          <td>${m.type}</td>
+          <td><span class="task-tag ${taskClass}">${m.task || 'Model'}</span></td>
+          <td class="font-mono"><strong>${accStr}</strong></td>
+          <td class="font-mono">${aucStr}</td>
+          <td class="font-mono">${precStr}</td>
+          <td class="font-mono">${recStr}</td>
+          <td class="font-mono">${f1Str}</td>
+          <td class="font-mono" style="color:${m.mae !== null ? '#1E3A8A' : 'var(--text-muted)'};">${maeStr}</td>
+          <td><span style="font-size:11px; color:#2D6B00;"><i class="fa-solid fa-circle-check"></i> Out-of-Sample Verified</span></td>
+        </tr>`;
     });
-  } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="5" class="loading-row" style="color:${C.danger}">${e.message}</td></tr>`;
-  }
-}
 
-async function handleRetrain() {
-  const btn = document.getElementById("btnRetrain");
-  if (!confirm("Retrain and overwrite all saved models in saved_models/?")) return;
-
-  const origText = btn.innerHTML;
-  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Retraining models on disk…';
-  btn.disabled = true;
-
-  try {
-    const res = await fetch("/api/retrain", { method: "POST" });
-    const data = await res.json();
-    if (data.success) {
-      alert("✓ " + data.message);
-      loadModelMetrics();
-      loadPredChart();
-      loadSavedModelsStatus();
-      runLivePrediction();
-    } else {
-      throw new Error(data.error || "Retraining failed");
+  } catch (err) {
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="10" style="color:#FF725E; text-align:center; padding:20px;">Failed to load metrics: ${err.message}</td></tr>`;
     }
-  } catch(e) {
-    alert("Retrain Error: " + e.message);
-  } finally {
-    btn.innerHTML = origText;
-    btn.disabled = false;
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════════════════════════════════════
-document.addEventListener("DOMContentLoaded", () => {
-  // 1. Close-price chart
-  const sel = document.getElementById("rangeSelect");
-  if (sel) {
-    loadCloseChart(parseInt(sel.value, 10));
-    sel.addEventListener("change", () => loadCloseChart(parseInt(sel.value, 10)));
-  }
+function renderLabCharts() {
+  if (!labMetricsCache || labMetricsCache.length === 0) return;
 
-  // 2. Model metrics
-  loadModelMetrics();
+  const classificationModels = labMetricsCache.filter((m) => m.dir_accuracy !== null);
+  const labels = classificationModels.map((m) => m.model.split(" ")[0]);
+  const accValues = classificationModels.map((m) => m.dir_accuracy);
+  const aucModels = classificationModels.filter((m) => m.roc_auc !== null);
+  const aucLabels = aucModels.map((m) => m.model.split(" ")[0]);
+  const aucValues = aucModels.map((m) => m.roc_auc);
 
-  // 3. Predictions chart
-  loadPredChart();
-
-  // 4. Simulator
-  initSimulatorControls();
-  fetchLatestMarketValues('^DJI');
-  const btnRun = document.getElementById("btnRunPrediction");
-  if (btnRun) btnRun.addEventListener("click", runLivePrediction);
-  
-  // Wire model-select AFTER populateInitialSimulatorData so it doesn't fire too early
-  const simSel = document.getElementById("simModelSelect");
-  if (simSel) simSel.addEventListener("change", runLivePrediction);
-
-  const btnReset = document.getElementById("btnResetLags");
-  if (btnReset) {
-    btnReset.addEventListener("click", () => {
-      if (latestMarketFeatures) {
-        const f = latestMarketFeatures;
-        // Correct field names from /api/live-market-data response
-        document.getElementById("inputLag1").value = ((f.return_1)      ?? 0).toFixed(6);
-        document.getElementById("inputLag2").value = ((f.return_lag_1)  ?? 0).toFixed(6);
-        document.getElementById("inputLag3").value = ((f.return_lag_2)  ?? 0).toFixed(6);
-        document.getElementById("inputLag4").value = ((f.return_5)      ?? 0).toFixed(6);
-        document.getElementById("inputLag5").value = ((f.return_10)     ?? 0).toFixed(6);
-        runLivePrediction();
-      }
+  // 1. Accuracy Comparison Bar Chart
+  const ctxAcc = document.getElementById("labAccuracyChart");
+  if (ctxAcc) {
+    if (labAccuracyChart) labAccuracyChart.destroy();
+    labAccuracyChart = new Chart(ctxAcc.getContext("2d"), {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: "Direction Accuracy (%)",
+            data: accValues,
+            backgroundColor: accValues.map((v) => (v >= 90 ? "#B8E64B" : v >= 75 ? "#465BFF" : "#DFE1E6")),
+            borderRadius: 3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` Accuracy: ${ctx.parsed.y.toFixed(2)}%`,
+            },
+          },
+        },
+        scales: {
+          y: {
+            min: 50,
+            max: 100,
+            ticks: { font: { family: "JetBrains Mono", size: 10 }, callback: (v) => `${v}%` },
+            grid: { color: "rgba(17,18,22,0.05)" },
+          },
+          x: {
+            ticks: { font: { family: "Inter", size: 10 } },
+            grid: { display: false },
+          },
+        },
+      },
     });
   }
 
-  // 5. Saved models file list & Retrain button
-  loadSavedModelsStatus();
-  const btnRetrain = document.getElementById("btnRetrain");
-  if (btnRetrain) btnRetrain.addEventListener("click", handleRetrain);
-});
+  // 2. ROC-AUC Bar Chart
+  const ctxAuc = document.getElementById("labAucChart");
+  if (ctxAuc) {
+    if (labAucChart) labAucChart.destroy();
+    labAucChart = new Chart(ctxAuc.getContext("2d"), {
+      type: "bar",
+      data: {
+        labels: aucLabels,
+        datasets: [
+          {
+            label: "ROC-AUC Score",
+            data: aucValues,
+            backgroundColor: "#2D6B00",
+            borderRadius: 3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` ROC-AUC: ${ctx.parsed.y.toFixed(4)}`,
+            },
+          },
+        },
+        scales: {
+          y: {
+            min: 0.4,
+            max: 1.0,
+            ticks: { font: { family: "JetBrains Mono", size: 10 } },
+            grid: { color: "rgba(17,18,22,0.05)" },
+          },
+          x: {
+            ticks: { font: { family: "Inter", size: 10 } },
+            grid: { display: false },
+          },
+        },
+      },
+    });
+  }
+}

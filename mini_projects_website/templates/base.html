@@ -6,10 +6,10 @@
   <meta name="description" content="{% block meta_desc %}Time Series Based Stock Market Forecasting Using Python — Quantitative AI, Deep Learning, and Machine Learning Platform.{% endblock %}" />
   <title>{% block title %}Time Series Based Stock Market Forecasting Using Python{% endblock %}</title>
 
-  <!-- Google Fonts -->
+  <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
   <!-- Font Awesome icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
@@ -21,24 +21,27 @@
 </head>
 <body>
 
-  <!-- ── Navigation ──────────────────────────────────────────────────────── -->
+  <!-- ── Top Navigation Bar ──────────────────────────────────────────────── -->
   <nav class="navbar" id="navbar">
     <div class="nav-container">
 
       <a href="/project/stock-market" class="nav-brand">
-        <span class="brand-icon"><i class="fa-solid fa-chart-line"></i></span>
-        <span class="brand-text">Stock<span class="accent">Forecast AI</span></span>
+        <span class="brand-symbol">TF</span>
+        <span class="brand-title">
+          TIME-SERIES FORECASTING
+          <span class="brand-badge">RESEARCH LAB</span>
+        </span>
       </a>
 
       <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
-        <span></span><span></span><span></span>
+        <i class="fa-solid fa-bars"></i>
       </button>
 
       <ul class="nav-links" id="navLinks">
-        <li><a href="/project/stock-market" class="nav-link {% if request.path == '/project/stock-market' %}active{% endif %}">Forecast Dashboard</a></li>
-        <li><a href="/project/stock-market#simulation" class="nav-link">Live Inference</a></li>
-        <li><a href="/project/stock-market#metrics" class="nav-link">Model Metrics</a></li>
-        <li><a href="/project/stock-market#chart" class="nav-link">Visualisation</a></li>
+        <li><a href="/project/stock-market" class="nav-link {% if request.path == '/project/stock-market' %}active{% endif %}">Forecasting</a></li>
+        <li><a href="/project/stock-market#laboratory" class="nav-link">Model Laboratory</a></li>
+        <li><a href="/project/stock-market#breakdown" class="nav-link">Prediction Breakdown</a></li>
+        <li><a href="/project/stock-market#methodology" class="nav-link">Methodology</a></li>
         <li><a href="/#about" class="nav-link">About Project</a></li>
       </ul>
 
@@ -50,42 +53,66 @@
     {% block content %}{% endblock %}
   </main>
 
-  <!-- ── Footer ──────────────────────────────────────────────────────────── -->
-  <footer class="footer">
-    <div class="footer-container">
-      <div class="footer-brand">
-        <span class="brand-icon"><i class="fa-solid fa-chart-line"></i></span>
-        <span>Time Series Based Stock Market Forecasting Using Python</span>
+  <!-- ── Global Editorial Footer with Risk Disclaimer ────────────────────── -->
+  <footer class="editorial-footer">
+    <div class="section-container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand-title">TIME SERIES BASED STOCK MARKET FORECASTING USING PYTHON</div>
+          <p class="footer-desc">
+            An open quantitative financial engineering framework comparing 8 machine learning, econometrics,
+            and deep learning models against live real-time Yahoo Finance market streaming and historical Dow Jones benchmarks.
+          </p>
+        </div>
+        <div>
+          <div class="footer-heading">Navigation</div>
+          <ul class="footer-links">
+            <li><a href="/project/stock-market">Live Forecaster</a></li>
+            <li><a href="/project/stock-market#laboratory">Model Laboratory</a></li>
+            <li><a href="/project/stock-market#breakdown">Prediction Breakdown</a></li>
+            <li><a href="/project/stock-market#methodology">32 Technical Indicators</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-heading">Architecture</div>
+          <ul class="footer-links">
+            <li><a href="/api/dataset-metadata">Dataset Metadata API</a></li>
+            <li><a href="/api/model-metrics">Model Metrics API</a></li>
+            <li><a href="/api/status">System Status</a></li>
+            <li><a href="https://github.com/karuraghavendra08-crypto/Time-series-based-stock-market-forecasting" target="_blank" rel="noopener">GitHub Repository</a></li>
+          </ul>
+        </div>
       </div>
-      <p class="footer-tagline">Real-Time Market Streaming &bull; Deep Learning &bull; Machine Learning &bull; Quantitative Analytics</p>
-      <div class="footer-stack">
-        <span class="tech-pill">Python 3.11</span>
-        <span class="tech-pill">Flask</span>
-        <span class="tech-pill">TensorFlow / Keras</span>
-        <span class="tech-pill">Scikit-learn</span>
-        <span class="tech-pill">Statsmodels</span>
-        <span class="tech-pill">Yahoo Finance</span>
-        <span class="tech-pill">Chart.js</span>
+
+      <!-- Financial-Risk Disclaimer (Phase 12) -->
+      <div class="footer-disclaimer-box">
+        <div class="footer-heading"><i class="fa-solid fa-triangle-exclamation"></i> Financial-Risk Disclaimer</div>
+        <p class="footer-disclaimer-text">
+          <strong>ABOUT THESE FORECASTS:</strong> This application is an educational and experimental platform
+          for financial time-series analysis. Predictions are generated using statistical or machine learning models
+          and historical market observations. Financial markets are uncertain. Historical patterns and past model performance
+          do not guarantee future outcomes. Forecasts may be inaccurate, incomplete, or affected by changes in market conditions
+          and data availability. This application does not guarantee investment returns and should not be treated as personalized
+          financial advice or as a standalone basis for investment decisions.
+        </p>
       </div>
-      <p class="footer-copy">&copy; 2026 Time Series Based Stock Market Forecasting Using Python</p>
+
+      <div class="footer-bottom">
+        <span>&copy; 2026 Academic Engineering Capstone Project. All models evaluated on out-of-sample forward data.</span>
+        <span>Python 3.11 &bull; Flask &bull; TensorFlow &bull; Scikit-Learn &bull; Chart.js</span>
+      </div>
     </div>
   </footer>
 
-  <!-- ── Shared JS ────────────────────────────────────────────────────────── -->
+  <!-- ── Shared JavaScript ────────────────────────────────────────────────── -->
   <script>
-    // Navbar scroll effect
-    const navbar = document.getElementById('navbar');
-    window.addEventListener('scroll', () => {
-      navbar.classList.toggle('scrolled', window.scrollY > 40);
-    });
-
-    // Mobile toggle
     const navToggle = document.getElementById('navToggle');
     const navLinks  = document.getElementById('navLinks');
-    navToggle.addEventListener('click', () => {
-      navLinks.classList.toggle('open');
-      navToggle.classList.toggle('open');
-    });
+    if (navToggle && navLinks) {
+      navToggle.addEventListener('click', () => {
+        navLinks.classList.toggle('open');
+      });
+    }
   </script>
 
   {% block extra_js %}{% endblock %}

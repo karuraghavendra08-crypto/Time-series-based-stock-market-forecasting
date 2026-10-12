@@ -1,138 +1,139 @@
 {% extends "base.html" %}
 
-{% block title %}Time Series Based Stock Market Forecasting Using Python{% endblock %}
-{% block meta_desc %}Time Series Based Stock Market Forecasting Using Python — Quantitative AI, Deep Learning (LSTM, RNN), Machine Learning Regime Classifiers, and Real-Time Market Streaming.{% endblock %}
+{% block title %}Time Series Based Stock Market Forecasting Using Python — Overview{% endblock %}
+{% block meta_desc %}Academic research and production quantitative time-series stock market forecasting platform featuring 8 machine learning models and real-time market data.{% endblock %}
 
 {% block content %}
 
-<!-- ── Hero ─────────────────────────────────────────────────────────────── -->
-<section class="hero" id="home">
-  <div class="hero-bg">
-    <div class="hero-grid"></div>
-    <div class="hero-glow"></div>
-  </div>
-  <div class="hero-content">
-    <div class="hero-badge">
-      <i class="fa-solid fa-circle-dot pulse"></i>
-      <span>Production Machine Learning & Deep Learning</span>
-    </div>
-    <h1 class="hero-title">Time Series Based Stock Market Forecasting Using Python</h1>
-    <p class="hero-subtitle">Deep Learning &bull; Machine Learning &bull; Trend Regime Classification &bull; Live Market Streaming</p>
-    <p class="hero-description">
-      An end-to-end quantitative financial engineering and time-series forecasting web platform powered by <strong>Stacked LSTM, Simple RNN, Random Forest, Gradient Boosting (93.4% Accuracy)</strong>, and real-time Yahoo Finance market streaming.
-    </p>
-    <div class="hero-actions">
-      <a href="/project/stock-market" class="btn btn-primary">
-        <i class="fa-solid fa-chart-line"></i> Launch Forecasting Dashboard
-      </a>
-      <a href="/project/stock-market#simulation" class="btn btn-ghost">
-        <i class="fa-solid fa-bolt"></i> Live Real-Time Simulator
-      </a>
-    </div>
-    <!-- floating stats -->
-    <div class="hero-stats">
-      <div class="stat-pill"><span class="stat-num">93.4%</span><span class="stat-label">Regime Accuracy</span></div>
-      <div class="stat-pill"><span class="stat-num">8</span><span class="stat-label">Trained ML/DL Models</span></div>
-      <div class="stat-pill"><span class="stat-num">32</span><span class="stat-label">Technical Features</span></div>
-      <div class="stat-pill"><span class="stat-num">Live</span><span class="stat-label">Yahoo Finance Feed</span></div>
-    </div>
-  </div>
+<!-- ── Editorial Hero ─────────────────────────────────────────── -->
+<section class="editorial-hero">
+  <div class="section-container">
+    <div class="hero-editorial-grid">
+      <div>
+        <span class="hero-meta-label">Financial Time-Series Research &bull; Academic Engineering Project</span>
+        <h1 class="hero-headline">
+          Read the Market.<br />
+          <span class="accent">Test the Signal.</span>
+        </h1>
+        <p class="hero-standfirst">
+          An end-to-end quantitative financial engineering platform comparing 8 machine learning,
+          econometric, and deep learning models on real-time and historical Dow Jones market data.
+        </p>
+        <div class="hero-actions">
+          <a href="/project/stock-market" class="btn-editorial-primary">
+            <i class="fa-solid fa-chart-line"></i> Launch Forecasting Platform
+          </a>
+          <a href="/project/stock-market#laboratory" class="btn-editorial-secondary">
+            <i class="fa-solid fa-flask-vial"></i> Model Comparison Lab
+          </a>
+        </div>
+      </div>
 
-  <div class="hero-scroll-hint">
-    <span>Scroll to explore architecture</span>
-    <i class="fa-solid fa-chevron-down bounce"></i>
+      <!-- Telemetry Card -->
+      <div class="hero-telemetry-box">
+        <div class="telemetry-header">
+          <span class="telemetry-title"><i class="fa-solid fa-microchip"></i> System Telemetry</span>
+          <span class="telemetry-status-dot">Operational</span>
+        </div>
+        <div class="telemetry-grid">
+          <div class="telemetry-stat accent">
+            <span class="telemetry-label">Regime Classifier Acc</span>
+            <span class="telemetry-val lime">93.42%</span>
+          </div>
+          <div class="telemetry-stat blue">
+            <span class="telemetry-label">Random Forest Acc</span>
+            <span class="telemetry-val blue">80.38%</span>
+          </div>
+          <div class="telemetry-stat">
+            <span class="telemetry-label">Historical Trading Days</span>
+            <span class="telemetry-val">27,824</span>
+          </div>
+          <div class="telemetry-stat">
+            <span class="telemetry-label">Lookahead Bias</span>
+            <span class="telemetry-val" style="color:var(--acid-lime);">Zero (Audited)</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
-
-<!-- ── Projects Grid ─────────────────────────────────────────────────────── -->
-<section class="projects-section" id="projects">
+<!-- ── Project Overview Cards ─────────────────────────────────── -->
+<section style="padding: 48px 0;">
   <div class="section-container">
     <div class="section-header">
-      <span class="section-label">Live System</span>
-      <h2 class="section-title">Stock Forecasting System</h2>
+      <span class="section-label">Research Architecture</span>
+      <h2 class="section-title">Core Forecasting Systems</h2>
       <p class="section-subtitle">
-        Explore the complete predictive time-series pipeline, interactive charts, and real-time inference simulator.
+        Explore the verified predictive time-series pipeline, interactive multi-model laboratory, and live inference engine.
       </p>
     </div>
 
-    <div class="projects-grid">
-      {% for project in projects %}
-      <article class="project-card" id="card-{{ project.id }}" data-category="{{ project.category }}">
-
-        <!-- card header -->
-        <div class="card-header">
-          <div class="card-icon">
-            <i class="fa-solid fa-{{ project.icon }}"></i>
-          </div>
-          <div class="card-meta">
-            <span class="card-category">{{ project.category }}</span>
-            <span class="badge badge-done"><i class="fa-solid fa-circle-check"></i> Live Production</span>
-          </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+      <!-- Card 1: Forecaster -->
+      <div style="background: var(--surface-card); border: 1px solid var(--border-fine); border-radius: var(--radius-sm); padding: 28px; box-shadow: var(--shadow-subtle);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <span style="font-size: 24px;"><i class="fa-solid fa-chart-line"></i></span>
+          <span class="task-tag classification">Interactive Inference</span>
         </div>
-
-        <!-- card body -->
-        <div class="card-body">
-          <h3 class="card-title">{{ project.title }}</h3>
-          <p class="card-desc">{{ project.description }}</p>
-        </div>
-
-        <!-- tech stack -->
-        <div class="card-techs">
-          {% for tech in project.technologies %}
-          <span class="tech-tag">{{ tech }}</span>
-          {% endfor %}
-        </div>
-
-        <!-- card footer -->
-        <div class="card-footer">
-          <a href="{{ project.route }}" class="btn btn-card">
-            Open Forecasting Platform <i class="fa-solid fa-arrow-right"></i>
-          </a>
-        </div>
-
-      </article>
-      {% endfor %}
-    </div>
-  </div>
-</section>
-
-
-<!-- ── About Section ─────────────────────────────────────────────────────── -->
-<section class="about-section" id="about">
-  <div class="section-container">
-    <div class="about-grid">
-
-      <div class="about-text">
-        <span class="section-label">Quantitative Engineering</span>
-        <h2 class="section-title">About the Forecasting Platform</h2>
-        <p>
-          This project demonstrates a production-grade approach to financial time-series forecasting. Unlike naive price regressions, it formulates market forecasting as a <strong>5-day forward trend regime classification problem</strong> and multi-horizon return estimation.
+        <h3 style="font-size: 19px; margin-bottom: 8px;">Real-Time Stock Forecaster</h3>
+        <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 20px;">
+          Execute live forward forecasts across Dow Jones (^DJI) and major global equities (AAPL, MSFT, NVDA).
+          Displays verified return-to-price conversions and mathematical delta breakdowns.
         </p>
-        <p>
-          The system implements 32 backward-looking technical indicators (zero look-ahead bias), 60-day chronological sequence modeling with Stacked LSTM & RNN networks, and gradient boosted regime classifiers.
-        </p>
-        <p>
-          All models are persisted on disk in <code>saved_models/</code> and execute live inference against real-time market data streamed from Yahoo Finance.
-        </p>
-        <a href="/project/stock-market" class="btn btn-primary mt-1">Open Forecasting Dashboard</a>
+        <a href="/project/stock-market" class="btn-editorial-primary" style="font-size: 13px; padding: 8px 16px;">
+          Open Live Forecaster <i class="fa-solid fa-arrow-right"></i>
+        </a>
       </div>
 
-      <div class="about-skills">
-        <h3 class="skills-title">Core Technologies &amp; Architecture</h3>
-        <div class="skill-list">
-          <div class="skill-item"><i class="fa-brands fa-python"></i><span>Python 3.11</span></div>
-          <div class="skill-item"><i class="fa-solid fa-brain"></i><span>TensorFlow / Keras</span></div>
-          <div class="skill-item"><i class="fa-solid fa-microchip"></i><span>Scikit-learn</span></div>
-          <div class="skill-item"><i class="fa-solid fa-chart-line"></i><span>Statsmodels (ARMA)</span></div>
-          <div class="skill-item"><i class="fa-solid fa-database"></i><span>Pandas &amp; NumPy</span></div>
-          <div class="skill-item"><i class="fa-solid fa-tower-broadcast"></i><span>Yahoo Finance Live Feed</span></div>
-          <div class="skill-item"><i class="fa-solid fa-flask"></i><span>Flask REST Backend</span></div>
-          <div class="skill-item"><i class="fa-solid fa-chart-pie"></i><span>Chart.js Visualizer</span></div>
+      <!-- Card 2: Model Lab -->
+      <div style="background: var(--surface-card); border: 1px solid var(--border-fine); border-radius: var(--radius-sm); padding: 28px; box-shadow: var(--shadow-subtle);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <span style="font-size: 24px;"><i class="fa-solid fa-flask-vial"></i></span>
+          <span class="task-tag regression">8 Models Benchmarked</span>
         </div>
+        <h3 style="font-size: 19px; margin-bottom: 8px;">Model Comparison Laboratory</h3>
+        <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 20px;">
+          Side-by-side scientific evaluation of Random Forest, Gradient Boosting, Simple RNN, Stacked LSTM,
+          and ARMA(2,7) models against chronological out-of-sample forward test data.
+        </p>
+        <a href="/project/stock-market#laboratory" class="btn-editorial-secondary" style="font-size: 13px; padding: 8px 16px; color: var(--bg-dark); border-color: var(--border-fine);">
+          Explore Model Lab <i class="fa-solid fa-arrow-right"></i>
+        </a>
       </div>
 
+      <!-- Card 3: Prediction Breakdown -->
+      <div style="background: var(--surface-card); border: 1px solid var(--border-fine); border-radius: var(--radius-sm); padding: 28px; box-shadow: var(--shadow-subtle);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <span style="font-size: 24px;"><i class="fa-solid fa-magnifying-glass-chart"></i></span>
+          <span class="task-tag benchmark">Explainability</span>
+        </div>
+        <h3 style="font-size: 19px; margin-bottom: 8px;">Prediction Breakdown Panel</h3>
+        <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 20px;">
+          Plain-English explanation of why each model generated its signal, key technical feature drivers
+          (RSI, SMA ratios, Volatility), and verified out-of-sample reliability context.
+        </p>
+        <a href="/project/stock-market#breakdown" class="btn-editorial-secondary" style="font-size: 13px; padding: 8px 16px; color: var(--bg-dark); border-color: var(--border-fine);">
+          View Explanation Panel <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
     </div>
+
+    <!-- Financial Risk Disclaimer Card (Phase 12) -->
+    <div class="disclaimer-card" style="margin-top: 40px;">
+      <div class="disclaimer-header">
+        <i class="fa-solid fa-triangle-exclamation"></i> Financial-Risk Disclaimer
+      </div>
+      <p class="disclaimer-text">
+        <strong>ABOUT THESE FORECASTS:</strong> This application is an educational and experimental platform
+        for financial time-series analysis. Predictions are generated using statistical or machine learning models
+        and historical market observations. Financial markets are uncertain. Historical patterns and past model performance
+        do not guarantee future outcomes. Forecasts may be inaccurate, incomplete, or affected by changes in market conditions
+        and data availability. This application does not guarantee investment returns and should not be treated as personalized
+        financial advice or as a standalone basis for investment decisions.
+      </p>
+    </div>
+
   </div>
 </section>
 
